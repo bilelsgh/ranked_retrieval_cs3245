@@ -8,7 +8,7 @@ from nltk.tokenize import wordpunct_tokenize
 from nltk import stem
 
 MEMORY = 100 #size ?
-PONCTUATION = [",",".",":","!",";","?","/",")","("]
+PUNCTUATION = [",",".",":","!",";","?","/",")","("]
 STEMMER = stem.PorterStemmer()
 
 
@@ -33,19 +33,19 @@ def SPIMIInvert(file):
                 stemmed_token = (STEMMER.stem(word)) # are -> be
                 
                 #Remove punctuations
-                if stemmed_token not in PONCTUATION and stemmed_token != "":
-                    for punc in PONCTUATION:
-                        stemmed_token =  stemmed_token.replace(punc,"") 
+                if stemmed_token not in PUNCTUATION and stemmed_token != "":
+                    stemmed_token = stemmed_token[:-1] if stemmed_token[-1] in PUNCTUATION else stemmed_token 
                     stemmed_tokens_without_punct.append(stemmed_token)
-
+            
+            print(stemmed_tokens_without_punct)
             # finally  -> ["be", "u.s", "big"]
 
             #Dictionary and posting list
             for token in stemmed_tokens_without_punct:
-                
-                
+                pass
+        return 0    
             # tokens = wordpunct_tokenize(line)
-            # tokens_without_ponct = [token for token in tokens if token not in PONCTUATION]
+            # tokens_without_ponct = [token for token in tokens if token not in PUNCTUATION]
 
 
 def build_index(in_dir, out_dict, out_postings):
@@ -57,7 +57,7 @@ def build_index(in_dir, out_dict, out_postings):
     
     for filename in os.listdir("nltk_data/corpora/reuters/training/"):
         SPIMIInvert(os.path.join("nltk_data/corpora/reuters/training/", filename))
-
+        return 0
 input_directory = output_file_dictionary = output_file_postings = None
 
 try:
