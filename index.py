@@ -15,7 +15,7 @@ Problems to fix :
 
 
 MEMORY = 200 #size ?
-PUNCTUATION = [",",".",":","!",";","?","/",")","("]
+PUNCTUATION = [",",".",":","!",";","?","/",")","(","\""]
 STEMMER = stem.PorterStemmer()
 
 
@@ -26,6 +26,23 @@ def printDico(dic,post):
     for key in list(dic.keys()):
         print("> '{}' : \n   > #{} (size: {})".format(key,dic[key],len(post[dic[key]])))
     print("========================\n")
+
+def sortDict(_dict):
+    keys = list(_dict.keys())
+    keys.sort()
+    res = {}
+
+    for key in keys:
+        res[key] = _dict[key]
+
+    return res
+
+def sortPosting(post,_dict):
+    res = {}
+    for postKey in list(_dict.values()):
+        res[str(postKey)] = post[postKey]
+
+    return res
 
 
 
@@ -46,6 +63,8 @@ def build_index(in_dir, out_dict, out_postings):
     #We are going through all the documents
     for docID in os.listdir("nltk_data/corpora/reuters/training/"):
         file = os.path.join("nltk_data/corpora/reuters/training/", docID)
+        if index > 0:
+            break
         index +=1
 
         with open(file, 'r') as f:
@@ -87,19 +106,29 @@ def build_index(in_dir, out_dict, out_postings):
                     
                     # No more memory available !
                     if len(dictionary) >= MEMORY :
-                        #sort
-                        with open("./dictionary/dictionary_{}.txt".format(dictionary_written),'w') as d:
+                        
+                        dictionary = sortDict(dictionary)
+                        postingList = sortPosting(postingList,dictionary)
+
+                        with open("./index/dict/dictionary_{}.txt".format(dictionary_written),'w') as d:
                             d.write( json.dumps(dictionary) )
-                        dictionary_written += 1
-                        dictionary = {}
-                        postingList = {}
+                        with open("./index/post/posting_{}.txt".format(dictionary_written),'w') as p:
+                            p.write( json.dumps(postingList) )
+                            dictionary_written += 1
+                            dictionary = {}
+                            postingList = {}
         if index > 1:
             break
 
     # Write the current dictionary
     if len(dictionary) != 0:
-        with open("./dictionary/dictionary_{}.txt".format(dictionary_written),'w') as d:
+        dictionary = sortDict(dictionary)
+        postingList = sortPosting(postingList,dictionary)
+
+        with open("./index/dict/dictionary_{}.txt".format(dictionary_written),'w') as d:
             d.write( json.dumps(dictionary) )
+        with open("./index/post/posting_{}.txt".format(dictionary_written),'w') as p:
+            p.write( json.dumps(postingList) )
             dictionary_written += 1
             dictionary = {}
             postingList = {}
