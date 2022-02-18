@@ -14,7 +14,7 @@ Problems to fix :
 """
 
 
-MEMORY = 200 #size ?
+MEMORY = 15 #size ?
 PUNCTUATION = [",",".",":","!",";","?","/",")","(","\""]
 STEMMER = stem.PorterStemmer()
 
@@ -45,6 +45,17 @@ def sortPosting(post,_dict):
     return res
 
 
+def writeDict(idx,_dict):
+    with open("./index/dict/dictionary_{}.txt".format(idx), "w") as f:
+        for key,val in _dict.items():
+            f.write("{}: {}\n".format(key,val))
+
+def writePosting(idx,post):
+    with open("./index/post/posting_{}.txt".format(idx), "w") as f:
+        for postID,docIDS in post.items():
+            all_docIDS = "/".join(list(docIDS.keys()))
+            f.write("{}: {}\n".format(postID,all_docIDS))
+
 
 def build_index(in_dir, out_dict, out_postings):
     """
@@ -61,8 +72,8 @@ def build_index(in_dir, out_dict, out_postings):
     index = -1
     
     #We are going through all the documents
-    for docID in os.listdir("nltk_data/corpora/reuters/training/"):
-        file = os.path.join("nltk_data/corpora/reuters/training/", docID)
+    for docID in os.listdir("nltk_data/corpora/reuters/demo/"):
+        file = os.path.join("nltk_data/corpora/reuters/demo/", docID)
         if index > 0:
             break
         index +=1
@@ -110,13 +121,12 @@ def build_index(in_dir, out_dict, out_postings):
                         dictionary = sortDict(dictionary)
                         postingList = sortPosting(postingList,dictionary)
 
-                        with open("./index/dict/dictionary_{}.txt".format(dictionary_written),'w') as d:
-                            d.write( json.dumps(dictionary) )
-                        with open("./index/post/posting_{}.txt".format(dictionary_written),'w') as p:
-                            p.write( json.dumps(postingList) )
-                            dictionary_written += 1
-                            dictionary = {}
-                            postingList = {}
+                        # Write onto hardisk
+                        writeDict(dictionary_written,dictionary)
+                        writePosting(dictionary_written,postingList)
+                        dictionary_written += 1
+                        dictionary = {}
+                        postingList = {}
         if index > 1:
             break
 
@@ -125,13 +135,11 @@ def build_index(in_dir, out_dict, out_postings):
         dictionary = sortDict(dictionary)
         postingList = sortPosting(postingList,dictionary)
 
-        with open("./index/dict/dictionary_{}.txt".format(dictionary_written),'w') as d:
-            d.write( json.dumps(dictionary) )
-        with open("./index/post/posting_{}.txt".format(dictionary_written),'w') as p:
-            p.write( json.dumps(postingList) )
-            dictionary_written += 1
-            dictionary = {}
-            postingList = {}
+        writeDict(dictionary_written,dictionary)
+        writePosting(dictionary_written,postingList)
+        dictionary_written += 1
+        dictionary = {}
+        postingList = {}
 
 
 
