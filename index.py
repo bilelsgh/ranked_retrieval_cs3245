@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import re
+from nbformat import write
 import nltk
 import os
 import sys
@@ -14,7 +15,7 @@ Problems to fix :
 """
 
 
-MEMORY = 15 #size ?
+MEMORY = 6 #size ?
 PUNCTUATION = [",",".",":","!",";","?","/",")","(","\""]
 STEMMER = stem.PorterStemmer()
 
@@ -48,13 +49,67 @@ def sortPosting(post,_dict):
 def writeDict(idx,_dict):
     with open("./index/dict/dictionary_{}.txt".format(idx), "w") as f:
         for key,val in _dict.items():
-            f.write("{}: {}\n".format(key,val))
+            f.write("{}:{}\n".format(key,val))
+
+def writeMergeDict(_dict):
+    with open("./index/dict/merge/dictionary_{}.txt".format(1), "w") as f:
+        for key,val in _dict.items():
+            f.write("{}:{}\n".format(key,val))
+
+def writeMergePosting(_post):
+    with open("./index/post/merge/posting_{}.txt".format(1), "w") as f:
+        for key,val in _post.items():
+            print(val)
+            all_postIDS = ",".join(val)
+            f.write("{}:{}\n".format(key,all_postIDS))
 
 def writePosting(idx,post):
     with open("./index/post/posting_{}.txt".format(idx), "w") as f:
         for postID,docIDS in post.items():
-            all_docIDS = "/".join(list(docIDS.keys()))
-            f.write("{}: {}\n".format(postID,all_docIDS))
+            all_docIDS = ",".join(list(docIDS.keys()))
+            f.write("{}:{}\n".format(postID,all_docIDS))
+
+
+def merge(dict1, dict2, post1, post2):
+    new_dict = {}
+    new_post = {}
+    nb_postingList = 0
+    with open(dict1,"r") as d1:
+        with open(dict2,"r") as d2:
+            with open(post1,"r") as p1:
+                with open(post2) as p2:
+                    d1_line = d1.readline()
+                    d1_term = d1_line.split(":")[0]
+                    d2_line = d2.readline()
+                    d2_term = d2_line.split(":")[0]
+                    p1_line = p1.readline()
+                    p2_line = p2.readline()
+
+                    while(len(new_dict) < MEMORY and (d1_line and d2_line) ):
+                        if d1_term < d2_term :
+                            try:
+                                new_dict[d1_term]
+                                new_post[new_dict[d1_term]] += ( [elt for elt in p1_line.split(":")[1].split(",")] ) 
+                            except:
+                                new_post[nb_postingList] = p1_line.split(":")[1].split(",") 
+                                new_dict[d1_term] = nb_postingList
+                                nb_postingList +=1
+                            d1_line = d1.readline()
+                            p1_line = p1.readline()
+                        else :
+                            try:
+                                new_dict[d2_term]
+                                new_post[new_dict[d2_term]] += ( [elt for elt in p2_line.split(":")[1].split(",")] ) 
+                            except:
+                                new_post[nb_postingList] = p2_line.split(":")[1].split(",") 
+                                new_dict[d2_term] = nb_postingList
+                                nb_postingList +=1
+                            d2_line = d2.readline()
+                            p2_line = p2.readline()
+    
+    writeMergeDict(new_dict)
+    writeMergePosting(new_post)
+
 
 
 def build_index(in_dir, out_dict, out_postings):
@@ -167,3 +222,4 @@ if input_directory == None or output_file_postings == None or output_file_dictio
     sys.exit(2)
 
 build_index(input_directory, output_file_dictionary, output_file_postings)
+merge("./index/dict/dictionary_0.txt","./index/dict/dictionary_1.txt","./index/post/posting_0.txt","./index/post/posting_1.txt")

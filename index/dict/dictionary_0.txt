@@ -1,9 +1,6 @@
-bien: 4
-ca: 2
-famille: 6
-la: 5
-non: 9
-oui: 1
-salut: 7
-toi: 8
-va: 3
+bien:4
+ca:2
+famille:6
+la:5
+oui:1
+va:3
