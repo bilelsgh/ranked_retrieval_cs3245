@@ -15,7 +15,7 @@ Problems to fix :
 """
 
 
-MEMORY = 6 #size ?
+MEMORY = 20 #size ?
 PUNCTUATION = [",",".",":","!",";","?","/",")","(","\""]
 STEMMER = stem.PorterStemmer()
 
@@ -59,7 +59,6 @@ def writeMergeDict(_dict):
 def writeMergePosting(_post):
     with open("./index/post/merge/posting_{}.txt".format(1), "w") as f:
         for key,val in _post.items():
-            print(val)
             all_postIDS = ",".join(val)
             f.write("{}:{}\n".format(key,all_postIDS))
 
@@ -73,7 +72,7 @@ def writePosting(idx,post):
 def merge(dict1, dict2, post1, post2):
     new_dict = {}
     new_post = {}
-    nb_postingList = 0
+    nb_postingList = 1
     with open(dict1,"r") as d1:
         with open(dict2,"r") as d2:
             with open(post1,"r") as p1:
@@ -85,26 +84,44 @@ def merge(dict1, dict2, post1, post2):
                     p1_line = p1.readline()
                     p2_line = p2.readline()
 
+
                     while(len(new_dict) < MEMORY and (d1_line and d2_line) ):
+                        print("\n============\nd1_term: {}, d2_term: {}".format(d1_term,d2_term))
                         if d1_term < d2_term :
                             try:
                                 new_dict[d1_term]
-                                new_post[new_dict[d1_term]] += ( [elt for elt in p1_line.split(":")[1].split(",")] ) 
-                            except:
-                                new_post[nb_postingList] = p1_line.split(":")[1].split(",") 
+                                new_post[new_dict[d1_term]] += [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",")] 
+                            except KeyError:
+                                new_post[nb_postingList] = [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",") ]
                                 new_dict[d1_term] = nb_postingList
                                 nb_postingList +=1
                             d1_line = d1.readline()
+                            d1_term = d1_line.split(":")[0]
                             p1_line = p1.readline()
-                        else :
+
+                        elif d1_term > d2_term :
                             try:
                                 new_dict[d2_term]
-                                new_post[new_dict[d2_term]] += ( [elt for elt in p2_line.split(":")[1].split(",")] ) 
-                            except:
-                                new_post[nb_postingList] = p2_line.split(":")[1].split(",") 
+                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",")] ) 
+                            except KeyError:
+                                new_post[nb_postingList] =  [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",") ]
                                 new_dict[d2_term] = nb_postingList
                                 nb_postingList +=1
                             d2_line = d2.readline()
+                            d2_term = d2_line.split(":")[0]
+                            p2_line = p2.readline()
+                        
+                        else:
+                            try:
+                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",")] ) 
+                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",")] ) 
+                            except KeyError:
+                                new_post[nb_postingList] = [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",") ]
+                                new_post[nb_postingList] += ( [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",")] )
+                                new_dict[d2_term] = nb_postingList
+                                nb_postingList +=1
+                            d2_line = d2.readline()
+                            d2_term = d2_line.split(":")[0]
                             p2_line = p2.readline()
     
     writeMergeDict(new_dict)
