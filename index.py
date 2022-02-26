@@ -8,6 +8,7 @@ import getopt
 import json
 from nltk.tokenize import wordpunct_tokenize
 from nltk import stem
+from string import punctuation
 
 """
 Problems to fix :
@@ -15,8 +16,9 @@ Problems to fix :
 """
 
 
-MEMORY = 30 #size ?
+MEMORY = 9999999999999999999999999999 #size ?
 PUNCTUATION = [",",".",":","!",";","?","/",")","(","\""]
+s = '.$ABC-799-99,#'
 STEMMER = stem.PorterStemmer()
 
 
@@ -70,7 +72,7 @@ def writePosting(idx,post):
 
 
 def merge(dict1, dict2, post1, post2):
-    print("\n -> Dic1 : {}\n -> Dic2 : {}\n -> Post1 : {}\n -> Post2 : {}\n".format(dict1,dict2,post1,post2))
+    #print("\n -> Dic1 : {}\n -> Dic2 : {}\n -> Post1 : {}\n -> Post2 : {}\n".format(dict1,dict2,post1,post2))
     new_dict = {}
     new_post = {}
     nb_postingList = 1
@@ -158,10 +160,10 @@ def build_index(in_dir, out_dict, out_postings):
     
     # 
     # We are going through all the documents
-    for docID in os.listdir("nltk_data/corpora/reuters/demo/"):
-        file = os.path.join("nltk_data/corpora/reuters/demo/", docID)
-        if index > 0:
-            break
+    for docID in os.listdir("nltk_data/corpora/reuters/training/"):
+        file = os.path.join("nltk_data/corpora/reuters/training/", docID)
+        # if index > 0:
+        #     break
         index +=1
 
         with open(file, 'r') as f:
@@ -177,10 +179,7 @@ def build_index(in_dir, out_dict, out_postings):
                     stemmed_token = (STEMMER.stem(word)) # are -> be
                     
                     #Remove punctuations
-                    if stemmed_token not in PUNCTUATION and stemmed_token != "":
-                        stemmed_token = stemmed_token[:-1] if stemmed_token[-1] in PUNCTUATION else stemmed_token 
-                        stemmed_token = stemmed_token[1:] if stemmed_token[0] in PUNCTUATION else stemmed_token 
-                        stemmed_tokens_without_punct.append(stemmed_token)
+                    stemmed_token = stemmed_token.strip(punctuation)
                 
                 # finally  -> ["be", "u.s", "big"]
 
