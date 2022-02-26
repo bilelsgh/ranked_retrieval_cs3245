@@ -15,7 +15,7 @@ Problems to fix :
 """
 
 
-MEMORY = 20 #size ?
+MEMORY = 30 #size ?
 PUNCTUATION = [",",".",":","!",";","?","/",")","(","\""]
 STEMMER = stem.PorterStemmer()
 
@@ -52,12 +52,12 @@ def writeDict(idx,_dict):
             f.write("{}:{}\n".format(key,val))
 
 def writeMergeDict(_dict):
-    with open("./index/dict/merge/dictionary_{}.txt".format(1), "w") as f:
+    with open("./index/dict/dictionary_{}.txt".format(1), "w") as f:
         for key,val in _dict.items():
             f.write("{}:{}\n".format(key,val))
 
 def writeMergePosting(_post):
-    with open("./index/post/merge/posting_{}.txt".format(1), "w") as f:
+    with open("./index/post/posting_{}.txt".format(1), "w") as f:
         for key,val in _post.items():
             all_postIDS = ",".join(val)
             f.write("{}:{}\n".format(key,all_postIDS))
@@ -70,6 +70,7 @@ def writePosting(idx,post):
 
 
 def merge(dict1, dict2, post1, post2):
+    print("\n -> Dic1 : {}\n -> Dic2 : {}\n -> Post1 : {}\n -> Post2 : {}\n".format(dict1,dict2,post1,post2))
     new_dict = {}
     new_post = {}
     nb_postingList = 1
@@ -212,8 +213,6 @@ def build_index(in_dir, out_dict, out_postings):
                         dictionary_written += 1
                         dictionary = {}
                         postingList = {}
-        if index > 1:
-            break
 
     # Write the current dictionary
     if len(dictionary) != 0:
@@ -273,10 +272,12 @@ while len(dict_repo) != 1:
     
     if dic1 and dic2 and post1 and post2 :
         merge(dic1, dic2, post1, post2)
-        os.remove(dic1)
-        os.remove(post1)
+        os.remove(dic2)
+        os.remove(post2)
     idx += 1
     
     if idx == len(dict_repo):
         dic1 = dic2 = post1 = post2 = None
         idx = 0
+        dict_repo = os.listdir("index/dict/")
+        post_repo = os.listdir("index/post/")

@@ -1,0 +1,6 @@
+bien:1
+ca:2
+famille:3
+la:4
+non:5
+oui:6
