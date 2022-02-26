@@ -87,11 +87,16 @@ def merge(dict1, dict2, post1, post2):
 
                     while(len(new_dict) < MEMORY and (d1_line and d2_line) ):
                         #print("\n============\nd1_term: {}, d2_term: {}".format(d1_term,d2_term))
+
+                        # The term "d1_term" appears first in the alphabetical order
                         if d1_term < d2_term :
+                            # The first term is already on the dictionary, we add the docID to the posting list linked to the term
                             try:
                                 new_dict[d1_term]
                                 new_post[new_dict[d1_term]] += [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",") if elt.replace("\n","") ] 
-                                new_post[new_dict[d1_term]] = list(set(new_post[new_dict[d1_term]]))
+                                new_post[new_dict[d1_term]] = list(set(new_post[new_dict[d1_term]])) #Remove duplicates
+
+                            # The term is not in the dictionary : we add this term to the dictionary and create a new posting list
                             except KeyError:
                                 new_post[nb_postingList] = [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",") if elt.replace("\n","")  ]
                                 new_dict[d1_term] = nb_postingList
@@ -100,11 +105,13 @@ def merge(dict1, dict2, post1, post2):
                             d1_term = d1_line.split(":")[0]
                             p1_line = p1.readline()
 
+                        # The term "d2_term" appears first in the alphabetical order
                         elif d1_term > d2_term :
                             try:
                                 new_dict[d2_term]
                                 new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",") if elt.replace("\n","") ] ) 
-                                new_post[new_dict[d2_term]] = list(set(new_post[new_dict[d2_term]]))
+                                new_post[new_dict[d2_term]] = list(set(new_post[new_dict[d2_term]])) #Remove duplicates
+
                             except KeyError:
                                 new_post[nb_postingList] =  [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",") if elt.replace("\n","") ]
                                 new_dict[d2_term] = nb_postingList
@@ -113,15 +120,16 @@ def merge(dict1, dict2, post1, post2):
                             d2_term = d2_line.split(":")[0]
                             p2_line = p2.readline()
                         
+                        # The two terms are identical
                         else:
                             try:
                                 new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",") if elt.replace("\n","") ] ) 
                                 new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",") if elt.replace("\n","") ] ) 
-                                new_post[new_dict[d2_term]] = list(set(new_post[new_dict[d2_term]]))
+                                new_post[new_dict[d2_term]] = list(set(new_post[new_dict[d2_term]])) #Remove duplicates
                             except KeyError:
                                 new_post[nb_postingList] = [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",") if elt.replace("\n","") ]
                                 new_post[nb_postingList] += ( [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",") if elt.replace("\n","")  ] )
-                                new_post[nb_postingList] = list(set(new_post[nb_postingList]))
+                                new_post[nb_postingList] = list(set(new_post[nb_postingList])) #Remove duplicates
                                 new_dict[d2_term] = nb_postingList
                                 nb_postingList +=1
                             d2_line = d2.readline()
@@ -220,6 +228,7 @@ def build_index(in_dir, out_dict, out_postings):
 
 
 
+# === INPUT PROCESS ===
 
 input_directory = output_file_dictionary = output_file_postings = None
 
@@ -243,5 +252,31 @@ if input_directory == None or output_file_postings == None or output_file_dictio
     usage()
     sys.exit(2)
 
+
+
+# === INDEX CONSTRUCTION ===
+
+# Build index -> several dict and posting lists
 build_index(input_directory, output_file_dictionary, output_file_postings)
-merge("./index/dict/dictionary_0.txt","./index/dict/dictionary_1.txt","./index/post/posting_0.txt","./index/post/posting_1.txt")
+
+# Merge to end up with one dictionary and one posting list
+dict_repo = os.listdir("index/dict/")
+post_repo = os.listdir("index/post/")
+
+dic1 = dic2 = post1 = post2 = None
+idx = 0
+while len(dict_repo) != 1:
+    dic2 = dic1 
+    dic1 = os.path.join("index/dict/", dict_repo[idx] )
+    post2 = post1
+    post1 = os.path.join("index/post/", post_repo[idx] )
+    
+    if dic1 and dic2 and post1 and post2 :
+        merge(dic1, dic2, post1, post2)
+        os.remove(dic1)
+        os.remove(post1)
+    idx += 1
+    
+    if idx == len(dict_repo):
+        dic1 = dic2 = post1 = post2 = None
+        idx = 0

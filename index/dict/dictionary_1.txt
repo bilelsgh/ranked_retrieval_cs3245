@@ -1,6 +1,0 @@
-bien:4
-ca:2
-non:6
-salut:1
-toi:5
-va:3
