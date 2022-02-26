@@ -86,13 +86,14 @@ def merge(dict1, dict2, post1, post2):
 
 
                     while(len(new_dict) < MEMORY and (d1_line and d2_line) ):
-                        print("\n============\nd1_term: {}, d2_term: {}".format(d1_term,d2_term))
+                        #print("\n============\nd1_term: {}, d2_term: {}".format(d1_term,d2_term))
                         if d1_term < d2_term :
                             try:
                                 new_dict[d1_term]
-                                new_post[new_dict[d1_term]] += [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",")] 
+                                new_post[new_dict[d1_term]] += [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",") if elt.replace("\n","") ] 
+                                new_post[new_dict[d1_term]] = list(set(new_post[new_dict[d1_term]]))
                             except KeyError:
-                                new_post[nb_postingList] = [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",") ]
+                                new_post[nb_postingList] = [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",") if elt.replace("\n","")  ]
                                 new_dict[d1_term] = nb_postingList
                                 nb_postingList +=1
                             d1_line = d1.readline()
@@ -102,9 +103,10 @@ def merge(dict1, dict2, post1, post2):
                         elif d1_term > d2_term :
                             try:
                                 new_dict[d2_term]
-                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",")] ) 
+                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",") if elt.replace("\n","") ] ) 
+                                new_post[new_dict[d2_term]] = list(set(new_post[new_dict[d2_term]]))
                             except KeyError:
-                                new_post[nb_postingList] =  [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",") ]
+                                new_post[nb_postingList] =  [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",") if elt.replace("\n","") ]
                                 new_dict[d2_term] = nb_postingList
                                 nb_postingList +=1
                             d2_line = d2.readline()
@@ -113,11 +115,13 @@ def merge(dict1, dict2, post1, post2):
                         
                         else:
                             try:
-                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",")] ) 
-                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",")] ) 
+                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",") if elt.replace("\n","") ] ) 
+                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",") if elt.replace("\n","") ] ) 
+                                new_post[new_dict[d2_term]] = list(set(new_post[new_dict[d2_term]]))
                             except KeyError:
-                                new_post[nb_postingList] = [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",") ]
-                                new_post[nb_postingList] += ( [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",")] )
+                                new_post[nb_postingList] = [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",") if elt.replace("\n","") ]
+                                new_post[nb_postingList] += ( [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",") if elt.replace("\n","")  ] )
+                                new_post[nb_postingList] = list(set(new_post[nb_postingList]))
                                 new_dict[d2_term] = nb_postingList
                                 nb_postingList +=1
                             d2_line = d2.readline()
@@ -143,7 +147,8 @@ def build_index(in_dir, out_dict, out_postings):
 
     index = -1
     
-    #We are going through all the documents
+    # 
+    # We are going through all the documents
     for docID in os.listdir("nltk_data/corpora/reuters/demo/"):
         file = os.path.join("nltk_data/corpora/reuters/demo/", docID)
         if index > 0:
