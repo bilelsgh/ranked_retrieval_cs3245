@@ -182,7 +182,7 @@ def build_index(in_dir, out_dict, out_postings):
                     stemmed_token = stemmed_token.strip(punctuation)
                 
                 # finally  -> ["be", "u.s", "big"]
-
+ 
 
                 # == SPIMI INVERT == 
                 for token in stemmed_tokens_without_punct:
