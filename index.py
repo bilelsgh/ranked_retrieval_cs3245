@@ -16,7 +16,7 @@ Problems to fix :
 """
 
 
-MEMORY = 9999999999999999999999999999 #size ?
+MEMORY = 6 #size ?
 PUNCTUATION = [",",".",":","!",";","?","/",")","(","\"","'"]
 s = '.$ABC-799-99,#'
 STEMMER = stem.PorterStemmer()
@@ -53,10 +53,10 @@ def writeDict(idx,_dict,postL):
         for key,val in _dict.items():
             f.write("{}/{}:{}\n".format(key,len( postL[str(val)] ),val))
 
-def writeMergeDict(_dict):
+def writeMergeDict(_dict,postL):
     with open("./index/dict/dictionary_{}.txt".format(1), "w") as f:
         for key,val in _dict.items():
-            f.write("{}:{}\n".format(key,val))
+            f.write("{}/{}:{}\n".format(key.split("/")[0],len( postL[val] ),val))
 
 def writeMergePosting(_post):
     with open("./index/post/posting_{}.txt".format(1), "w") as f:
@@ -139,7 +139,7 @@ def merge(dict1, dict2, post1, post2):
                             d2_term = d2_line.split(":")[0]
                             p2_line = p2.readline()
     
-    writeMergeDict(new_dict)
+    writeMergeDict(new_dict,new_post)
     writeMergePosting(new_post)
 
 
@@ -160,8 +160,8 @@ def build_index(in_dir, out_dict, out_postings):
     
     # 
     # We are going through all the documents
-    for docID in os.listdir("nltk_data/corpora/reuters/training/"):
-        file = os.path.join("nltk_data/corpora/reuters/training/", docID)
+    for docID in os.listdir("nltk_data/corpora/reuters/demo/"):
+        file = os.path.join("nltk_data/corpora/reuters/demo/", docID)
         # if index > 0:
         #     break
         index +=1
