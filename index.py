@@ -160,8 +160,8 @@ def build_index(in_dir, out_dict, out_postings):
     
     # 
     # We are going through all the documents
-    for docID in os.listdir("nltk_data/corpora/reuters/training/"):
-        file = os.path.join("nltk_data/corpora/reuters/training/", docID)
+    for docID in os.listdir("nltk_data/corpora/reuters/demo/"):
+        file = os.path.join("nltk_data/corpora/reuters/demo/", docID)
         # if index > 0:
         #     break
         index +=1
@@ -179,7 +179,10 @@ def build_index(in_dir, out_dict, out_postings):
                     stemmed_token = (STEMMER.stem(word)) # are -> be
                     
                     #Remove punctuations
-                    stemmed_token = stemmed_token.strip(punctuation)
+                    if stemmed_token not in PUNCTUATION and stemmed_token != "":
+                        stemmed_token = stemmed_token[:-1] if stemmed_token[-1] in PUNCTUATION else stemmed_token
+                        stemmed_token = stemmed_token[1:] if stemmed_token[0] in PUNCTUATION else stemmed_token
+                        stemmed_tokens_without_punct.append(stemmed_token)
                 
                 # finally  -> ["be", "u.s", "big"]
  
