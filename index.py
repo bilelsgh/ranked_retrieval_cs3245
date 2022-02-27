@@ -17,7 +17,7 @@ Problems to fix :
 
 
 MEMORY = 9999999999999999999999999999 #size ?
-PUNCTUATION = [",",".",":","!",";","?","/",")","(","\""]
+PUNCTUATION = [",",".",":","!",";","?","/",")","(","\"","'"]
 s = '.$ABC-799-99,#'
 STEMMER = stem.PorterStemmer()
 
@@ -48,10 +48,10 @@ def sortPosting(post,_dict):
     return res
 
 
-def writeDict(idx,_dict):
+def writeDict(idx,_dict,postL):
     with open("./index/dict/dictionary_{}.txt".format(idx), "w") as f:
         for key,val in _dict.items():
-            f.write("{}:{}\n".format(key,val))
+            f.write("{}/{}:{}\n".format(key,len( postL[str(val)] ),val))
 
 def writeMergeDict(_dict):
     with open("./index/dict/dictionary_{}.txt".format(1), "w") as f:
@@ -160,8 +160,8 @@ def build_index(in_dir, out_dict, out_postings):
     
     # 
     # We are going through all the documents
-    for docID in os.listdir("nltk_data/corpora/reuters/demo/"):
-        file = os.path.join("nltk_data/corpora/reuters/demo/", docID)
+    for docID in os.listdir("nltk_data/corpora/reuters/training/"):
+        file = os.path.join("nltk_data/corpora/reuters/training/", docID)
         # if index > 0:
         #     break
         index +=1
@@ -210,7 +210,7 @@ def build_index(in_dir, out_dict, out_postings):
                         postingList = sortPosting(postingList,dictionary)
 
                         # Write onto hardisk
-                        writeDict(dictionary_written,dictionary)
+                        writeDict(dictionary_written,dictionary,postingList)
                         writePosting(dictionary_written,postingList)
                         dictionary_written += 1
                         dictionary = {}
@@ -221,7 +221,7 @@ def build_index(in_dir, out_dict, out_postings):
         dictionary = sortDict(dictionary)
         postingList = sortPosting(postingList,dictionary)
 
-        writeDict(dictionary_written,dictionary)
+        writeDict(dictionary_written,dictionary,postingList)
         writePosting(dictionary_written,postingList)
         dictionary_written += 1
         dictionary = {}
