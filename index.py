@@ -10,6 +10,7 @@ import json
 from nltk.tokenize import wordpunct_tokenize
 from nltk import stem
 from string import punctuation
+from functions import clean
 
 """
 Problems to fix :
@@ -57,6 +58,7 @@ def writeDict(idx,_dict,postL):
             f.write("{}/{}:{}\n".format(key,len( postL[str(val)] ),val))
 
 def writeMergeDict(_dict,postL,idx):
+    print("New dict merged : dictionary_{}.txt".format(idx))
     with open("./index/dict/dictionary_{}.txt".format(idx), "w") as f:
         for key,val in _dict.items():
             f.write("{}/{}:{}\n".format(key.split("/")[0],len( postL[val] ),val))
@@ -75,6 +77,7 @@ def writePosting(idx,post):
 
 
 def merge(dict1, dict2, post1, post2,current_index):
+    print(" -> Merge")
     #print("\n -> Dic1 : {}\n -> Dic2 : {}\n -> Post1 : {}\n -> Post2 : {}\n".format(dict1,dict2,post1,post2))
     new_dict = {}
     new_post = {}
@@ -160,7 +163,6 @@ def merge(dict1, dict2, post1, post2,current_index):
                             p1_line = p1.readline()
 
                         if d1_line == "" and d2_line == "" :
-                            print("heeeeeeeeeeeeere")
                             finished = True
     
     if len(new_dict) != 0:
@@ -206,10 +208,8 @@ def build_index(in_dir, out_dict, out_postings):
                     stemmed_token = (STEMMER.stem(word)) # are -> be
                     
                     #Remove punctuations
-                    if stemmed_token not in PUNCTUATION and stemmed_token != "":
-                        stemmed_token = stemmed_token[:-1] if stemmed_token[-1] in PUNCTUATION else stemmed_token
-                        stemmed_token = stemmed_token[1:] if stemmed_token[0] in PUNCTUATION else stemmed_token
-                        stemmed_tokens_without_punct.append(stemmed_token)
+                    stemmed_tokens_without_punct += stemmed_token.strip(punctuation).split(" ")
+                    
                 
                 # finally  -> ["be", "u.s", "big"]
  
@@ -253,6 +253,7 @@ def build_index(in_dir, out_dict, out_postings):
         dictionary = {}
         postingList = {}
 
+    print("end indexing...")
     return dictionary_written
 
 
@@ -283,6 +284,7 @@ if input_directory == None or output_file_postings == None or output_file_dictio
 
 
 # === INDEX CONSTRUCTION ===
+clean()
 
 # Build index -> several dict and posting lists
 current_index = build_index(input_directory, output_file_dictionary, output_file_postings)
@@ -293,34 +295,46 @@ post_repo = os.listdir("index/post/")
 
 dic1 = dic2 = post1 = post2 = None
 idx = 0
+
+input("start ?\n")
 while True:
     if idx > 10 :
         print("#STOP")
         break 
     dic2 = dic1 
     dic1 = os.path.join("index/dict/", dict_repo[idx] )
+    print("#### {} // {}".format(dic1,dic2))
     post2 = post1
     post1 = os.path.join("index/post/", post_repo[idx] )
     
     if dic1 and dic2 and post1 and post2 :
+        temp = current_index
+        print("About to merge [{}] and [{}]".format(dic1,dic2))
         current_index = merge(dic1, dic2, post1, post2, current_index)
+        continue_ = input("\n**continue ?**\n")
+        #print("--> {} and {}".format(temp,current_index)) 
         print("compare: {} and {}".format( "index/dict/dictionary_{}.txt".format(current_index-1),"index/dict/dictionary_{}.txt".format(current_index-3) ))
         
-        if True:
+        #if False:
+        if (len(os.listdir("index/dict/")) > 1) and (current_index-3 > 0):
+        #if len(os.listdir("index/dict/")) > 1:
             if filecmp.cmp("index/dict/dictionary_{}.txt".format(current_index-1),"index/dict/dictionary_{}.txt".format(current_index-3)) : # !!!!!! check here for a different number of dict
                 print("STOP")
-                os.remove("index/dict/dictionary_{}.txt".format(current_index-1))
-                os.remove("index/post/posting_{}.txt".format(current_index-1))
+                # os.remove("index/dict/dictionary_{}.txt".format(current_index-1))
+                # os.remove("index/post/posting_{}.txt".format(current_index-1))
 
-                for index in range(current_index-3):
-                    os.remove("index/dict/dictionary_{}.txt".format(index))
-                    os.remove("index/post/posting_{}.txt".format(index))
+                # for index in range(current_index-3):
+                #     os.remove("index/dict/dictionary_{}.txt".format(index))
+                #     os.remove("index/post/posting_{}.txt".format(index))
                 
                 break
     idx += 1
     
     if idx == len(dict_repo):
+        print("**> updte repo")
         dic1 = dic2 = post1 = post2 = None
         idx = 0
+        # for elt in dict_repo:
+        #     os.remove("index/dict/{}".format(elt))
         dict_repo = os.listdir("index/dict/")
         post_repo = os.listdir("index/post/")
