@@ -53,27 +53,41 @@ def sortPosting(post,_dict):
 
 
 def writeDict(idx,_dict,postL):
+    offset = 0
     with open("./index/dict/dictionary_{}.txt".format(idx), "w") as f:
         for key,val in _dict.items():
-            f.write("{}/{}:{}\n".format(key,len( postL[str(val)] ),val))
+            offset = offset+1 if offset != 0 else offset
+            all_docIDS = " ".join(list(postL[str(val)].keys()))
+            post_line = "{} {}\n".format(offset,all_docIDS)
+            new_line = "{} {} {}\n".format(key,len( postL[str(val)] ),offset)
+            f.write(new_line)
+            offset += len(post_line)
+
 
 def writeMergeDict(_dict,postL,idx):
     print("New dict merged : dictionary_{}.txt".format(idx))
     with open("./index/dict/dictionary_{}.txt".format(idx), "w") as f:
         for key,val in _dict.items():
-            f.write("{}/{}:{}\n".format(key.split("/")[0],len( postL[val] ),val))
+            f.write("{} {} {}\n".format(key.split("/")[0],len( postL[val] ),val))
 
 def writeMergePosting(_post,idx):
     with open("./index/post/posting_{}.txt".format(idx), "w") as f:
         for key,val in _post.items():
-            all_postIDS = ",".join(val)
-            f.write("{}:{}\n".format(key,all_postIDS))
+            all_postIDS = " ".join(val)
+            f.write("{} {}\n".format(key,all_postIDS))
 
 def writePosting(idx,post):
+    offset = 0
     with open("./index/post/posting_{}.txt".format(idx), "w") as f:
         for postID,docIDS in post.items():
-            all_docIDS = ",".join(list(docIDS.keys()))
-            f.write("{}:{}\n".format(postID,all_docIDS))
+            offset = offset+1 if offset != 0 else offset
+            all_docIDS = " ".join(list(docIDS.keys()))
+            new_line = "{} {}\n".format(offset,all_docIDS)
+            offset += len(new_line)
+            f.write(new_line)
+
+
+
 
 
 def merge(dict1, dict2, post1, post2,current_index):
@@ -88,15 +102,16 @@ def merge(dict1, dict2, post1, post2,current_index):
             with open(post1,"r") as p1:
                 with open(post2) as p2:
                     d1_line = d1.readline()
-                    d1_term = d1_line.split(":")[0].split("/")[0].replace("\n","")
+                    d1_term = d1_line.split(" ")[0]
                     d2_line = d2.readline()
-                    d2_term = d2_line.split(":")[0].split("/")[0].replace("\n","")
+                    d2_term = d2_line.split(" ")[0]
                     p1_line = p1.readline()
                     p2_line = p2.readline()
                     finished = False
 
                     while(not finished):
-                        if len(new_dict) >= MEMORY:
+                        if False:
+                        #if len(new_dict) >= MEMORY:
                             print("NEW DICO")
                             writeMergeDict(new_dict,new_post,nb_merged_dict)
                             writeMergePosting(new_post,nb_merged_dict)
@@ -116,50 +131,50 @@ def merge(dict1, dict2, post1, post2,current_index):
                             # The first term is already on the dictionary, we add the docID to the posting list linked to the term
                             try:
                                 new_dict[d1_term] 
-                                new_post[new_dict[d1_term]] += [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",") if elt.replace("\n","") ] 
+                                new_post[new_dict[d1_term]] += [elt.replace("\n","") for elt in p1_line.split(" ")[1:] if elt.replace("\n","") ] 
                                 new_post[new_dict[d1_term]] = list(set(new_post[new_dict[d1_term]])) #Remove duplicates
 
                             # The term is not in the dictionary : we add this term to the dictionary and create a new posting list
                             except KeyError:
-                                new_post[nb_postingList] = [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",") if elt.replace("\n","")  ]
+                                new_post[nb_postingList] = [elt.replace("\n","") for elt in p1_line.split(" ")[1:] if elt.replace("\n","")  ]
                                 new_dict[d1_term] = nb_postingList
                                 nb_postingList +=1
                             d1_line = d1.readline()
-                            d1_term = d1_line.split(":")[0].split("/")[0].replace("\n","")
+                            d1_term = d1_line.split(" ")[0]
                             p1_line = p1.readline()
 
                         # The term "d2_term" appears first in the alphabetical order
                         elif ( (d1_term > d2_term) and d2_term != "") or (d1_term == ""):
                             try:
                                 new_dict[d2_term]
-                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",") if elt.replace("\n","") ] ) 
+                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p2_line.split(" ")[1:] if elt.replace("\n","") ] ) 
                                 new_post[new_dict[d2_term]] = list(set(new_post[new_dict[d2_term]])) #Remove duplicates
 
                             except KeyError:
-                                new_post[nb_postingList] =  [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",") if elt.replace("\n","") ]
+                                new_post[nb_postingList] =  [elt.replace("\n","") for elt in p2_line.split(" ")[1:] if elt.replace("\n","") ]
                                 new_dict[d2_term] = nb_postingList
                                 nb_postingList +=1
                             d2_line = d2.readline()
-                            d2_term = d2_line.split(":")[0].split("/")[0].replace("\n","")
+                            d2_term = d2_line.split(" ")[0]
                             p2_line = p2.readline()
                         
                         # The two terms are identical
                         else:
                             try:
-                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",") if elt.replace("\n","") ] ) 
-                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",") if elt.replace("\n","") ] ) 
+                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p2_line.split(" ")[1:] if elt.replace("\n","") ] ) 
+                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p1_line.split(" ")[1:] if elt.replace("\n","") ] ) 
                                 new_post[new_dict[d2_term]] = list(set(new_post[new_dict[d2_term]])) #Remove duplicates
                             except KeyError:
-                                new_post[nb_postingList] = [elt.replace("\n","") for elt in p2_line.split(":")[1].split(",") if elt.replace("\n","") ]
-                                new_post[nb_postingList] += ( [elt.replace("\n","") for elt in p1_line.split(":")[1].split(",") if elt.replace("\n","")  ] )
+                                new_post[nb_postingList] = [elt.replace("\n","") for elt in p2_line.split(" ")[1:] if elt.replace("\n","") ]
+                                new_post[nb_postingList] += ( [elt.replace("\n","") for elt in p1_line.split(" ")[1:] if elt.replace("\n","")  ] )
                                 new_post[nb_postingList] = list(set(new_post[nb_postingList])) #Remove duplicates
                                 new_dict[d2_term] = nb_postingList
                                 nb_postingList +=1
                             d2_line = d2.readline()
-                            d2_term = d2_line.split(":")[0].split("/")[0].replace("\n","")
+                            d2_term = d2_line.split(" ")[0]
                             p2_line = p2.readline()
                             d1_line = d1.readline()
-                            d1_term = d1_line.split(":")[0].split("/")[0].replace("\n","")
+                            d1_term = d1_line.split(" ")[0]
                             p1_line = p1.readline()
 
                         if d1_line == "" and d2_line == "" :
@@ -188,9 +203,11 @@ def build_index(in_dir, out_dict, out_postings):
     index = -1
     
     # 
+    dict_doc = [] # at which index do we change of document ?
     # We are going through all the documents
-    for docID in os.listdir("nltk_data/corpora/reuters/demo/"):
-        file = os.path.join("nltk_data/corpora/reuters/demo/", docID)
+    for docID in os.listdir("nltk_data/corpora/reuters/training/"):
+        file = os.path.join("nltk_data/corpora/reuters/training/", docID)
+        dict_doc.append(dictionary_written)
         # if index > 0:
         #     break
         index +=1
@@ -216,45 +233,47 @@ def build_index(in_dir, out_dict, out_postings):
 
                 # == SPIMI INVERT == 
                 for token in stemmed_tokens_without_punct:
-                    #Is the token in the dictionary ? 
-                    try:
-                        postingListID = dictionary[token]
-                        
-                        #We add the current docID to the posting list if it is not in yet
+                    if token != "":
+                        #Is the token in the dictionary ? 
                         try:
-                            postingList[postingListID][docID]
+                            postingListID = dictionary[token]
+                            
+                            #We add the current docID to the posting list if it is not in yet
+                            try:
+                                postingList[postingListID][docID]
+                            except:
+                                postingList[postingListID][docID] = -1 
                         except:
-                            postingList[postingListID][docID] = -1 
-                    except:
-                        dictionary[token] = list(dictionary.values())[-1]+1 if len(dictionary.values()) != 0 else 1
-                        postingList[dictionary[token]] = {}
-                        postingList[dictionary[token]][docID] = -1
-                    
-                    # No more memory available !
-                    if len(dictionary) >= MEMORY :
-                        dictionary = sortDict(dictionary)
-                        postingList = sortPosting(postingList,dictionary)
+                            dictionary[token] = list(dictionary.values())[-1]+1 if len(dictionary.values()) != 0 else 1
+                            postingList[dictionary[token]] = {}
+                            postingList[dictionary[token]][docID] = -1
+                        
+                        # No more memory available !
+                        if False:
+                        #if len(dictionary) >= MEMORY :
+                            dictionary = sortDict(dictionary)
+                            postingList = sortPosting(postingList,dictionary)
 
-                        # Write onto hardisk
-                        writeDict(dictionary_written,dictionary,postingList)
-                        writePosting(dictionary_written,postingList)
-                        dictionary_written += 1
-                        dictionary = {}
-                        postingList = {}
+                            # Write onto hardisk
+                            writePosting(dictionary_written,postingList)
+                            writeDict(dictionary_written,dictionary,postingList)
+                            dictionary_written += 1
+                            dictionary = {}
+                            postingList = {}
 
     # Write the current dictionary
     if len(dictionary) != 0:
         dictionary = sortDict(dictionary)
         postingList = sortPosting(postingList,dictionary)
 
-        writeDict(dictionary_written,dictionary,postingList)
         writePosting(dictionary_written,postingList)
+        writeDict(dictionary_written,dictionary,postingList)
         dictionary_written += 1
         dictionary = {}
         postingList = {}
 
     print("end indexing...")
-    return dictionary_written
+    return dict_doc
 
 
 # === INPUT PROCESS ===
@@ -295,46 +314,45 @@ post_repo = os.listdir("index/post/")
 
 dic1 = dic2 = post1 = post2 = None
 idx = 0
-
-input("start ?\n")
-while True:
-    if idx > 10 :
-        print("#STOP")
-        break 
-    dic2 = dic1 
-    dic1 = os.path.join("index/dict/", dict_repo[idx] )
-    print("#### {} // {}".format(dic1,dic2))
-    post2 = post1
-    post1 = os.path.join("index/post/", post_repo[idx] )
+# input("start ?\n")
+# while True:
+#     if idx > 10 :
+#         print("#STOP")
+#         break 
+#     dic2 = dic1 
+#     dic1 = os.path.join("index/dict/", dict_repo[idx] )
+#     print("#### {} // {}".format(dic1,dic2))
+#     post2 = post1
+#     post1 = os.path.join("index/post/", post_repo[idx] )
     
-    if dic1 and dic2 and post1 and post2 :
-        temp = current_index
-        print("About to merge [{}] and [{}]".format(dic1,dic2))
-        current_index = merge(dic1, dic2, post1, post2, current_index)
-        continue_ = input("\n**continue ?**\n")
-        #print("--> {} and {}".format(temp,current_index)) 
-        print("compare: {} and {}".format( "index/dict/dictionary_{}.txt".format(current_index-1),"index/dict/dictionary_{}.txt".format(current_index-3) ))
+#     if dic1 and dic2 and post1 and post2 :
+#         temp = current_index
+#         print("About to merge [{}] and [{}]".format(dic1,dic2))
+#         current_index = merge(dic1, dic2, post1, post2, current_index)
+#         continue_ = input("\n**continue ?**\n")
+#         #print("--> {} and {}".format(temp,current_index)) 
+#         print("compare: {} and {}".format( "index/dict/dictionary_{}.txt".format(current_index-1),"index/dict/dictionary_{}.txt".format(current_index-3) ))
         
-        #if False:
-        if (len(os.listdir("index/dict/")) > 1) and (current_index-3 > 0):
-        #if len(os.listdir("index/dict/")) > 1:
-            if filecmp.cmp("index/dict/dictionary_{}.txt".format(current_index-1),"index/dict/dictionary_{}.txt".format(current_index-3)) : # !!!!!! check here for a different number of dict
-                print("STOP")
-                # os.remove("index/dict/dictionary_{}.txt".format(current_index-1))
-                # os.remove("index/post/posting_{}.txt".format(current_index-1))
+#         #if False:
+#         if (len(os.listdir("index/dict/")) > 1) and (current_index-3 > 0):
+#         #if len(os.listdir("index/dict/")) > 1:
+#             if filecmp.cmp("index/dict/dictionary_{}.txt".format(current_index-1),"index/dict/dictionary_{}.txt".format(current_index-3)) : # !!!!!! check here for a different number of dict
+#                 print("STOP")
+#                 # os.remove("index/dict/dictionary_{}.txt".format(current_index-1))
+#                 # os.remove("index/post/posting_{}.txt".format(current_index-1))
 
-                # for index in range(current_index-3):
-                #     os.remove("index/dict/dictionary_{}.txt".format(index))
-                #     os.remove("index/post/posting_{}.txt".format(index))
+#                 # for index in range(current_index-3):
+#                 #     os.remove("index/dict/dictionary_{}.txt".format(index))
+#                 #     os.remove("index/post/posting_{}.txt".format(index))
                 
-                break
-    idx += 1
+#                 break
+#     idx += 1
     
-    if idx == len(dict_repo):
-        print("**> updte repo")
-        dic1 = dic2 = post1 = post2 = None
-        idx = 0
-        # for elt in dict_repo:
-        #     os.remove("index/dict/{}".format(elt))
-        dict_repo = os.listdir("index/dict/")
-        post_repo = os.listdir("index/post/")
+#     if idx == len(dict_repo):
+#         print("**> updte repo")
+#         dic1 = dic2 = post1 = post2 = None
+#         idx = 0
+#         # for elt in dict_repo:
+#         #     os.remove("index/dict/{}".format(elt))
+#         dict_repo = os.listdir("index/dict/")
+#         post_repo = os.listdir("index/post/")
