@@ -6,6 +6,7 @@ import nltk
 import os
 import sys
 import getopt
+import math
 import json
 from nltk.tokenize import wordpunct_tokenize
 from nltk import stem
@@ -21,7 +22,7 @@ Problems to fix :
 """
 
 
-MEMORY = 6 #size ?
+MEMORY = 99999999999999999999999999999999999999999999999999999999 #size ?
 PUNCTUATION = [",",".",":","!",";","?","/",")","(","\"","'"]
 STEMMER = stem.PorterStemmer()
 
@@ -81,8 +82,13 @@ def writePosting(idx,post):
     with open("./index/post/posting_{}.txt".format(idx), "w") as f:
         for postID,docIDS in post.items():
             offset = offset+1 if offset != 0 else offset
-            all_docIDS = " ".join(list(docIDS.keys()))
-            new_line = "{} {}\n".format(offset,all_docIDS)
+            sorted_docIDS = [int(elt) for elt in list(docIDS.keys())]
+            sorted_docIDS.sort()
+            sorted_docIDS = [str(elt) for elt in sorted_docIDS]
+            all_docIDS = " ".join( sorted_docIDS )
+            skip_pointers_list = [elt for idx,elt in enumerate( sorted_docIDS ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len( sorted_docIDS) ) ) == 0)]
+            skip_pointers = " ".join(skip_pointers_list)
+            new_line = "{} {} {}\n".format(offset,all_docIDS,skip_pointers)
             offset += len(new_line)
             f.write(new_line)
 
@@ -110,8 +116,8 @@ def merge(dict1, dict2, post1, post2,current_index):
                     finished = False
 
                     while(not finished):
-                        if False:
-                        #if len(new_dict) >= MEMORY:
+                        #if False:
+                        if len(new_dict) >= MEMORY:
                             print("NEW DICO")
                             writeMergeDict(new_dict,new_post,nb_merged_dict)
                             writeMergePosting(new_post,nb_merged_dict)
@@ -249,8 +255,8 @@ def build_index(in_dir, out_dict, out_postings):
                             postingList[dictionary[token]][docID] = -1
                         
                         # No more memory available !
-                        if False:
-                        #if len(dictionary) >= MEMORY :
+                        #if False:
+                        if len(dictionary) >= MEMORY :
                             dictionary = sortDict(dictionary)
                             postingList = sortPosting(postingList,dictionary)
 
@@ -273,7 +279,8 @@ def build_index(in_dir, out_dict, out_postings):
         postingList = {}
 
     print("end indexing...")
-    return dict_doc
+    return dictionary_written
+
 
 
 # === INPUT PROCESS ===
