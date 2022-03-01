@@ -5,6 +5,18 @@ STEMMER = stem.PorterStemmer()
 OPR = ["AND", "OR", "(", ")", "NOT"]
 NUM_DOCUMENTS = 100000
 
+### populate hashtable for easy retrieval
+def retrieve_dict(filepath):
+    dictionary = {}
+    with open(filepath, "r") as f:
+        ### read till eof
+        while (line := f.readline()):
+            word, freq, offset = line.split(" ")
+            dictionary[word] = (int(freq), int(offset))
+
+    return dictionary
+
+### check if token is a keyword or boolean operator
 def match_opr(token):
     return token in OPR
 
@@ -83,6 +95,8 @@ def query_processing(query):
     l = []
 
     for tk in query:
+        if tk == "":
+            continue
         if tk in OPR:
             l.append(tk)
             continue
@@ -128,12 +142,12 @@ def generate_postfix_notation(query):
     while len(opr) != 0:
         l.append(opr.pop())
 
+    print(l)
     return l
     
 
-query = "bill OR ./Gates/ AND NOT (vista OR XP) AND NOT mac"
+query = "bill OR   ./Gates/ AND NOT NOT (NOT vista OR NOT XP) AND NOT mac"
 #query = "bill OR Gates AND (vista OR XP) AND (warren AND buffet)"
 query_order = generate_postfix_notation(query)
-print(query_order)
 #eval_query(query_order)
-
+# dictionary = retrieve_dict("./index/dict/dictionary.txt")

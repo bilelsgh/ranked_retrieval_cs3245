@@ -1,0 +1,8 @@
+active AND ad
+active OR ad OR a
+statement OR stock
+active
+(statement OR stock) AND (active OR ad OR a)
+NOT (statement OR stock) AND (active OR ad OR a)
+active AND ad AND a OR statement
+statement
