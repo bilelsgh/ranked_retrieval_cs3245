@@ -91,10 +91,10 @@ def writeMergePosting(_post,idx,start_offset,file_name):
             sorted_docIDS = [int(elt) for elt in val]
             sorted_docIDS.sort()
             sorted_docIDS = [str(elt) for elt in sorted_docIDS]
-            all_postIDS = " ".join(val)
+            all_postIDS = " ".join(sorted_docIDS)
             skip_pointers_list = [elt for idx,elt in enumerate( sorted_docIDS ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len( sorted_docIDS) ) ) == 0)]
             skip_pointers = " ".join(skip_pointers_list)
-            new_line = "{} {} {}\n".format(offset, all_postIDS,skip_pointers)
+            new_line = "{} {}\n".format(all_postIDS,skip_pointers)
             f.write(new_line)
             offset += len(new_line)
     return offset
@@ -119,7 +119,6 @@ def writePosting(idx,post):
 
 
 def merge(dict1, dict2, post1, post2,current_index,file_dict, file_post):
-    print(" -> Merge")
     #print("\n -> Dic1 : {}\n -> Dic2 : {}\n -> Post1 : {}\n -> Post2 : {}\n".format(dict1,dict2,post1,post2))
     new_dict = {}
     new_post = {}
@@ -164,7 +163,6 @@ def merge(dict1, dict2, post1, post2,current_index,file_dict, file_post):
                     while(not finished):
                         #if False:
                         if len(new_dict) >= MEMORY:
-                            print("NEW DICO")
                             start_offset1 = writeMergeDict(new_dict,new_post,nb_merged_dict,start_offset1,file_dict)
                             start_offset = writeMergePosting(new_post,nb_merged_dict,start_offset,file_post)
                             new_dict = {}
