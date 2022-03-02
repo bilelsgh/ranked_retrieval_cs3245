@@ -63,7 +63,7 @@ def writeDict(idx,_dict,postL):
             post_line = "{} {}\n".format(all_docIDS,skip_pointers)
             new_line = "{} {} {}\n".format(key,len( postL[str(val)] ),offset)
             f.write(new_line)
-            offset += len(post_line)
+            offset += len(post_line)+1
 
 
 def writeMergeDict(_dict,postL,idx,start_offset,file_name):
@@ -78,7 +78,7 @@ def writeMergeDict(_dict,postL,idx,start_offset,file_name):
             post_line = "{} {}\n".format(all_docIDS,skip_pointers)
             new_line = "{} {} {}\n".format(key,len( postL[(val)] ),offset)
             f.write(new_line)
-            offset += len(post_line)
+            offset += len(post_line)+1
 
             #f.write("{} {} {}\n".format(key.split("/")[0],len( postL[val] ),val))
     return offset
@@ -96,7 +96,7 @@ def writeMergePosting(_post,idx,start_offset,file_name):
             skip_pointers = " ".join(skip_pointers_list)
             new_line = "{} {}\n".format(all_postIDS,skip_pointers)
             f.write(new_line)
-            offset += len(new_line)
+            offset += len(new_line)+1
     return offset
 
 def writePosting(idx,post):
@@ -112,7 +112,7 @@ def writePosting(idx,post):
             skip_pointers = " ".join(skip_pointers_list)
             new_line = "{} {}\n".format(all_docIDS,skip_pointers)
             f.write(new_line)
-            offset += len(new_line)
+            offset += len(new_line)+1
 
 
 
