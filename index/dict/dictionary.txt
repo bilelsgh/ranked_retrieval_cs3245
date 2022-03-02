@@ -1,0 +1,17 @@
+bien 1 1
+bloque 1 2
+c'est 1 3
+ca 2 4
+cherch 1 5
+famille 1 6
+je 1 7
+la 1 8
+non 1 9
+oui 1 10
+relou 1 1
+salut 1 2
+solut 1 3
+sui 1 4
+toi 1 5
+une 1 6
+va 2 7

@@ -111,13 +111,35 @@ def merge(dict1, dict2, post1, post2,current_index):
         with open(dict2,"r") as d2:
             with open(post1,"r") as p1:
                 with open(post2) as p2:
+                    finished = False
                     d1_line = d1.readline()
                     d1_term = d1_line.split(" ")[0]
                     d2_line = d2.readline()
                     d2_term = d2_line.split(" ")[0]
-                    p1_line = p1.readline()
-                    p2_line = p2.readline()
-                    finished = False
+                    
+                    p1_line_skP = p1.readline()
+                    p1_line_skP = [int(elt) for elt in p1_line_skP.split(" ")[:-1]] #put offset
+                    max1 = max(p1_line_skP)
+                    p1_line = []
+                    #Remove the skip pointers
+                    for elt in p1_line_skP :
+                        p1_line.append(str(elt))
+                        if elt == max1 :
+                            break
+                    p1_line = " ".join(p1_line)
+
+                    p2_line_skP = p2.readline()
+                    p2_line_skP = [int(elt) for elt in p2_line_skP.split(" ")[:-1]]
+                    max2 = max(p2_line_skP)
+                    p2_line = []
+                    #Remove the skip pointers
+                    for elt in p2_line_skP :
+                        p2_line.append(str(elt))
+                        if elt == max2 :
+                            break
+                    p2_line = " ".join(p2_line)
+                    
+                    
 
                     while(not finished):
                         #if False:
@@ -156,19 +178,24 @@ def merge(dict1, dict2, post1, post2,current_index):
                             # The term is not in the dictionary : we add this term to the dictionary and create a new posting list
                             except KeyError:
                                 #Get the docIDS only, without the skip pointers
-                                docIDs_without_spointer = []
-                                former_elt = -1
-                                for elt in  p1_line.split(" ")[1:]:
-                                    if int(elt) > former_elt:
-                                        break
-                                    docIDs_without_spointer.append(elt)
-
-                                new_post[nb_postingList] = [elt.replace("\n","") for elt in docIDs_without_spointer if elt.replace("\n","")  ]
+                                new_post[nb_postingList] = [elt.replace("\n","") for elt in p1_line.split(" ") if elt.replace("\n","")  ]
                                 new_dict[d1_term] = nb_postingList
                                 nb_postingList +=1
+
+                            # Get the next line of the posting list and the dictionary
                             d1_line = d1.readline()
                             d1_term = d1_line.split(" ")[0]
-                            p1_line = p1.readline()
+                            
+                            p1_line_skP = p1.readline()
+                            p1_line_skP = [int(elt) for elt in p1_line_skP.split(" ")[:-1]] #put offset
+                            max1 = max(p1_line_skP) if len(p1_line_skP) != 0 else 0 
+                            p1_line = []
+                            #Remove the skip pointers
+                            for elt in p1_line_skP :
+                                p1_line.append(str(elt))
+                                if elt == max1 :
+                                    break
+                            p1_line = " ".join(p1_line)
 
                         # The term "d2_term" appears first in the alphabetical order
                         elif ( (d1_term > d2_term) and d2_term != "") or (d1_term == ""):
@@ -176,70 +203,73 @@ def merge(dict1, dict2, post1, post2,current_index):
                                 new_dict[d2_term]
 
                                 #Get the docIDS only, without the skip pointers
-                                docIDs_without_spointer = []
-                                former_elt = -1
-                                for elt in  p2_line.split(" ")[1:]:
-                                    if int(elt) > former_elt:
-                                        break
-                                    docIDs_without_spointer.append(elt)
-
-                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in docIDs_without_spointer if elt.replace("\n","") ] ) 
+                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p2_line.split(" ") if elt.replace("\n","") ] ) 
                                 new_post[new_dict[d2_term]] = list(set(new_post[new_dict[d2_term]])) #Remove duplicates
 
                             except KeyError:
                                 #Get the docIDS only, without the skip pointers
-                                docIDs_without_spointer = []
-                                former_elt = -1
-                                for elt in  p2_line.split(" ")[1:]:
-                                    if int(elt) > former_elt:
-                                        break
-                                    docIDs_without_spointer.append(elt)
-
-
-                                new_post[nb_postingList] =  [elt.replace("\n","") for elt in docIDs_without_spointer if elt.replace("\n","") ]
+                                new_post[nb_postingList] =  [elt.replace("\n","") for elt in p2_line.split(" ") if elt.replace("\n","") ]
                                 new_dict[d2_term] = nb_postingList
                                 nb_postingList +=1
+
+                            # Get the next line of the posting list and the dictionary
                             d2_line = d2.readline()
                             d2_term = d2_line.split(" ")[0]
-                            p2_line = p2.readline()
+                            
+                            p2_line_skP = p2.readline()
+                            p2_line_skP = [int(elt) for elt in p2_line_skP.split(" ")[:-1]]
+                            max2 = max(p2_line_skP) if len(p2_line_skP) != 0 else 0
+                            p2_line = []
+                            #Remove the skip pointers
+                            for elt in p2_line_skP :
+                                p2_line.append(str(elt))
+                                if elt == max2 :
+                                    break
+                            p2_line = " ".join(p2_line)
                         
                         
                         # The two terms are identical
                         else:
 
                             #Get the docIDS only, without the skip pointers
-                            docIDs_without_spointer1 = []
-                            former_elt = -1
-                            for elt in  p1_line.split(" ")[1:]:
-                                if int(elt) > former_elt:
-                                    break
-                                docIDs_without_spointer1.append(elt)
-                            
-                            #Get the docIDS only, without the skip pointers
-                            docIDs_without_spointer2 = []
-                            former_elt = -1
-                            for elt in  p2_line.split(" ")[1:]:
-                                if int(elt) > former_elt:
-                                    break
-                                docIDs_without_spointer2.append(elt)
-
-
                             try:
-                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in docIDs_without_spointer2 if elt.replace("\n","") ] ) 
-                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in docIDs_without_spointer1 if elt.replace("\n","") ] ) 
+                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p2_line.split(" ") if elt.replace("\n","") ] ) 
+                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p1_line.split(" ") if elt.replace("\n","") ] ) 
                                 new_post[new_dict[d2_term]] = list(set(new_post[new_dict[d2_term]])) #Remove duplicates
                             except KeyError:
-                                new_post[nb_postingList] = [elt.replace("\n","") for elt in docIDs_without_spointer2 if elt.replace("\n","") ]
-                                new_post[nb_postingList] += ( [elt.replace("\n","") for elt in docIDs_without_spointer1 if elt.replace("\n","")  ] )
+                                new_post[nb_postingList] = [elt.replace("\n","") for elt in p2_line.split(" ") if elt.replace("\n","") ]
+                                new_post[nb_postingList] += ( [elt.replace("\n","") for elt in p1_line.split(" ") if elt.replace("\n","")  ] )
                                 new_post[nb_postingList] = list(set(new_post[nb_postingList])) #Remove duplicates
                                 new_dict[d2_term] = nb_postingList
                                 nb_postingList +=1
+
+                            # Get the next line of the posting list and the dictionary
                             d2_line = d2.readline()
                             d2_term = d2_line.split(" ")[0]
-                            p2_line = p2.readline()
+                            p2_line_skP = p2.readline()
+                            p2_line_skP = [int(elt) for elt in p2_line_skP.split(" ")[:-1]]
+                            max2 = max(p2_line_skP) if len(p2_line_skP) != 0 else 0
+                            p2_line = []
+                            #Remove the skip pointers
+                            for elt in p2_line_skP :
+                                p2_line.append(str(elt))
+                                if elt == max2 :
+                                    break
+                            p2_line = " ".join(p2_line)
+
                             d1_line = d1.readline()
                             d1_term = d1_line.split(" ")[0]
-                            p1_line = p1.readline()
+                            
+                            p1_line_skP = p1.readline()
+                            p1_line_skP = [int(elt) for elt in p1_line_skP.split(" ")[:-1]] #put offset
+                            max1 = max(p1_line_skP) if len(p1_line_skP) != 0 else 0
+                            p1_line = []
+                            #Remove the skip pointers
+                            for elt in p1_line_skP :
+                                p1_line.append(str(elt))
+                                if elt == max1 :
+                                    break
+                            p1_line = " ".join(p1_line)
 
                         if d1_line == "" and d2_line == "" :
                             finished = True
@@ -379,8 +409,8 @@ post_repo = os.listdir("index/post/")
 
 dic1 = dic2 = post1 = post2 = None
 idx = 0
-# input("start ?\n")
-#merge("index/dict/dictionary_0.txt", "index/dict/dictionary_0.txt", "index/post/posting_0.txt", "index/post/posting_1.txt", current_index)
+input("start ?\n")
+merge("index/dict/dictionary_0.txt", "index/dict/dictionary_1.txt", "index/post/posting_0.txt", "index/post/posting_1.txt", current_index)
 # while True:
 #     if idx > 10 :
 #         print("#STOP")
