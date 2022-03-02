@@ -22,7 +22,7 @@ Problems to fix :
 """
 
 
-MEMORY = 99999999999999999999999999999999999999999999999999999999 #size ?
+MEMORY = 10 #size ?
 PUNCTUATION = [",",".",":","!",";","?","/",")","(","\"","'"]
 STEMMER = stem.PorterStemmer()
 
@@ -70,13 +70,13 @@ def writeDict(idx,_dict,postL):
 
 
 def writeMergeDict(_dict,postL,idx):
-    print("New dict merged : dictionary_{}.txt".format(idx))
-    with open("./index/dict/dictionary_{}.txt".format(idx), "w") as f:
+    print("New dict merged : dictionary.txt".format(idx))
+    with open("./index/dict/dictionary.txt".format(idx), "a") as f:
         for key,val in _dict.items():
             f.write("{} {} {}\n".format(key.split("/")[0],len( postL[val] ),val))
 
 def writeMergePosting(_post,idx):
-    with open("./index/post/posting_{}.txt".format(idx), "w") as f:
+    with open("./index/post/posting.txt".format(idx), "a") as f:
         for key,val in _post.items():
             all_postIDS = " ".join(val)
             f.write("{} {}\n".format(key,all_postIDS))
@@ -269,8 +269,8 @@ def build_index(in_dir, out_dict, out_postings):
     # 
     dict_doc = [] # at which index do we change of document ?
     # We are going through all the documents
-    for docID in os.listdir("nltk_data/corpora/reuters/training/"):
-        file = os.path.join("nltk_data/corpora/reuters/training/", docID)
+    for docID in os.listdir("nltk_data/corpora/reuters/demo/"):
+        file = os.path.join("nltk_data/corpora/reuters/demo/", docID)
         dict_doc.append(dictionary_written)
         # if index > 0:
         #     break
@@ -380,6 +380,7 @@ post_repo = os.listdir("index/post/")
 dic1 = dic2 = post1 = post2 = None
 idx = 0
 # input("start ?\n")
+#merge("index/dict/dictionary_0.txt", "index/dict/dictionary_0.txt", "index/post/posting_0.txt", "index/post/posting_1.txt", current_index)
 # while True:
 #     if idx > 10 :
 #         print("#STOP")
