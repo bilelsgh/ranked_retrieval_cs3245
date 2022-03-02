@@ -137,12 +137,29 @@ def merge(dict1, dict2, post1, post2,current_index):
                             # The first term is already on the dictionary, we add the docID to the posting list linked to the term
                             try:
                                 new_dict[d1_term] 
-                                new_post[new_dict[d1_term]] += [elt.replace("\n","") for elt in p1_line.split(" ")[1:] if elt.replace("\n","") ] 
+
+                                #Get the docIDS only, without the skip pointers
+                                docIDs_without_spointer = []
+                                former_elt = -1
+                                for elt in  p1_line.split(" ")[1:]:
+                                    if int(elt) > former_elt:
+                                        break
+                                    docIDs_without_spointer.append(elt)
+
+                                new_post[new_dict[d1_term]] += [elt.replace("\n","") for elt in docIDs_without_spointer if elt.replace("\n","") ] 
                                 new_post[new_dict[d1_term]] = list(set(new_post[new_dict[d1_term]])) #Remove duplicates
 
                             # The term is not in the dictionary : we add this term to the dictionary and create a new posting list
                             except KeyError:
-                                new_post[nb_postingList] = [elt.replace("\n","") for elt in p1_line.split(" ")[1:] if elt.replace("\n","")  ]
+                                #Get the docIDS only, without the skip pointers
+                                docIDs_without_spointer = []
+                                former_elt = -1
+                                for elt in  p1_line.split(" ")[1:]:
+                                    if int(elt) > former_elt:
+                                        break
+                                    docIDs_without_spointer.append(elt)
+
+                                new_post[nb_postingList] = [elt.replace("\n","") for elt in docIDs_without_spointer if elt.replace("\n","")  ]
                                 new_dict[d1_term] = nb_postingList
                                 nb_postingList +=1
                             d1_line = d1.readline()
@@ -153,26 +170,63 @@ def merge(dict1, dict2, post1, post2,current_index):
                         elif ( (d1_term > d2_term) and d2_term != "") or (d1_term == ""):
                             try:
                                 new_dict[d2_term]
-                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p2_line.split(" ")[1:] if elt.replace("\n","") ] ) 
+
+                                #Get the docIDS only, without the skip pointers
+                                docIDs_without_spointer = []
+                                former_elt = -1
+                                for elt in  p2_line.split(" ")[1:]:
+                                    if int(elt) > former_elt:
+                                        break
+                                    docIDs_without_spointer.append(elt)
+
+                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in docIDs_without_spointer if elt.replace("\n","") ] ) 
                                 new_post[new_dict[d2_term]] = list(set(new_post[new_dict[d2_term]])) #Remove duplicates
 
                             except KeyError:
-                                new_post[nb_postingList] =  [elt.replace("\n","") for elt in p2_line.split(" ")[1:] if elt.replace("\n","") ]
+                                #Get the docIDS only, without the skip pointers
+                                docIDs_without_spointer = []
+                                former_elt = -1
+                                for elt in  p2_line.split(" ")[1:]:
+                                    if int(elt) > former_elt:
+                                        break
+                                    docIDs_without_spointer.append(elt)
+
+
+                                new_post[nb_postingList] =  [elt.replace("\n","") for elt in docIDs_without_spointer if elt.replace("\n","") ]
                                 new_dict[d2_term] = nb_postingList
                                 nb_postingList +=1
                             d2_line = d2.readline()
                             d2_term = d2_line.split(" ")[0]
                             p2_line = p2.readline()
                         
+                        
                         # The two terms are identical
                         else:
+
+                            #Get the docIDS only, without the skip pointers
+                            docIDs_without_spointer1 = []
+                            former_elt = -1
+                            for elt in  p1_line.split(" ")[1:]:
+                                if int(elt) > former_elt:
+                                    break
+                                docIDs_without_spointer1.append(elt)
+                            
+                            #Get the docIDS only, without the skip pointers
+                            docIDs_without_spointer2 = []
+                            former_elt = -1
+                            for elt in  p2_line.split(" ")[1:]:
+                                if int(elt) > former_elt:
+                                    break
+                                docIDs_without_spointer2.append(elt)
+
+
                             try:
-                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p2_line.split(" ")[1:] if elt.replace("\n","") ] ) 
-                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in p1_line.split(" ")[1:] if elt.replace("\n","") ] ) 
+                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in docIDs_without_spointer2 if elt.replace("\n","") ] ) 
+                                new_post[new_dict[d2_term]] += ( [elt.replace("\n","") for elt in docIDs_without_spointer1 if elt.replace("\n","") ] ) 
                                 new_post[new_dict[d2_term]] = list(set(new_post[new_dict[d2_term]])) #Remove duplicates
                             except KeyError:
-                                new_post[nb_postingList] = [elt.replace("\n","") for elt in p2_line.split(" ")[1:] if elt.replace("\n","") ]
-                                new_post[nb_postingList] += ( [elt.replace("\n","") for elt in p1_line.split(" ")[1:] if elt.replace("\n","")  ] )
+                                new_post[nb_postingList] = [elt.replace("\n","") for elt in docIDs_without_spointer2 if elt.replace("\n","") ]
+                                new_post[nb_postingList] += ( [elt.replace("\n","") for elt in docIDs_without_spointer1 if elt.replace("\n","")  ] )
                                 new_post[nb_postingList] = list(set(new_post[nb_postingList])) #Remove duplicates
                                 new_dict[d2_term] = nb_postingList
                                 nb_postingList +=1
