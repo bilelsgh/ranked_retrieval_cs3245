@@ -1,8 +1,0 @@
-bloque 1 0
-c'est 1 5
-cherch 1 10
-je 1 15
-relou 1 20
-solut 1 25
-sui 1 30
-une 1 35

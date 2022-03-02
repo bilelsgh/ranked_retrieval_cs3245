@@ -16,13 +16,10 @@ from functions import clean
 """
 Problems to fix :
 - 'involvement...wheth' as an unique token
-- ok ca créer bien plusieurs dico, il faut remove les bons en fonction de l'index maintenant
-- outof range error
-- ne s'arrete pas au break
 """
 
 
-MEMORY = 10 #size ?
+MEMORY = 30000
 PUNCTUATION = [",",".",":","!",";","?","/",")","(","\"","'"]
 STEMMER = stem.PorterStemmer()
 
@@ -55,7 +52,7 @@ def sortPosting(post,_dict):
 
 def writeDict(idx,_dict,postL):
     offset = 0
-    with open("./index/dict/dictionary_{}.txt".format(idx), "w") as f:
+    with open("dictionary_{}.txt".format(idx), "w") as f:
         for key,val in _dict.items():
             offset = offset+1 if offset != 0 else offset
             all_docIDS = " ".join(list(postL[str(val)].keys()))
@@ -69,9 +66,9 @@ def writeDict(idx,_dict,postL):
             offset += len(post_line)
 
 
-def writeMergeDict(_dict,postL,idx,start_offset):
+def writeMergeDict(_dict,postL,idx,start_offset,file_name):
     offset = start_offset
-    with open("./index/dict/dictionary.txt".format(idx), "a") as f:
+    with open(file_name, "a") as f:
         for key,val in _dict.items():
             offset = offset+1 if offset != 0 else offset
             all_docIDS = " ".join(postL[val])
@@ -86,9 +83,9 @@ def writeMergeDict(_dict,postL,idx,start_offset):
             #f.write("{} {} {}\n".format(key.split("/")[0],len( postL[val] ),val))
     return offset
 
-def writeMergePosting(_post,idx,start_offset):
+def writeMergePosting(_post,idx,start_offset,file_name):
     offset = start_offset
-    with open("./index/post/posting.txt".format(idx), "a") as f:
+    with open(file_name, "a") as f:
         for key,val in _post.items():
             offset = offset+1 if offset != 0 else offset
             sorted_docIDS = [int(elt) for elt in val]
@@ -97,14 +94,14 @@ def writeMergePosting(_post,idx,start_offset):
             all_postIDS = " ".join(val)
             skip_pointers_list = [elt for idx,elt in enumerate( sorted_docIDS ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len( sorted_docIDS) ) ) == 0)]
             skip_pointers = " ".join(skip_pointers_list)
-            new_line = "{} {}\n".format(all_postIDS,skip_pointers)
-            f.write("{} {}\n".format(offset,all_postIDS))
+            new_line = "{} {} {}\n".format(offset, all_postIDS,skip_pointers)
+            f.write(new_line)
             offset += len(new_line)
     return offset
 
 def writePosting(idx,post):
     offset = 0
-    with open("./index/post/posting_{}.txt".format(idx), "w") as f:
+    with open("posting_{}.txt".format(idx), "w") as f:
         for postID,docIDS in post.items():
             offset = offset+1 if offset != 0 else offset
             sorted_docIDS = [int(elt) for elt in list(docIDS.keys())]
@@ -121,7 +118,7 @@ def writePosting(idx,post):
 
 
 
-def merge(dict1, dict2, post1, post2,current_index):
+def merge(dict1, dict2, post1, post2,current_index,file_dict, file_post):
     print(" -> Merge")
     #print("\n -> Dic1 : {}\n -> Dic2 : {}\n -> Post1 : {}\n -> Post2 : {}\n".format(dict1,dict2,post1,post2))
     new_dict = {}
@@ -168,8 +165,8 @@ def merge(dict1, dict2, post1, post2,current_index):
                         #if False:
                         if len(new_dict) >= MEMORY:
                             print("NEW DICO")
-                            start_offset1 = writeMergeDict(new_dict,new_post,nb_merged_dict,start_offset1)
-                            start_offset = writeMergePosting(new_post,nb_merged_dict,start_offset)
+                            start_offset1 = writeMergeDict(new_dict,new_post,nb_merged_dict,start_offset1,file_dict)
+                            start_offset = writeMergePosting(new_post,nb_merged_dict,start_offset,file_post)
                             new_dict = {}
                             new_post = {}
                             nb_postingList = 1
@@ -298,14 +295,20 @@ def merge(dict1, dict2, post1, post2,current_index):
                             finished = True
     
     if len(new_dict) != 0:
-        writeMergeDict(new_dict,new_post,nb_merged_dict,start_offset1)
-        writeMergePosting(new_post,nb_merged_dict,start_offset)
+        writeMergeDict(new_dict,new_post,nb_merged_dict,start_offset1,file_dict)
+        writeMergePosting(new_post,nb_merged_dict,start_offset,file_post)
         nb_merged_dict += 1
+
+    # Delete the previous dictionaries and posting lists to keep only the final ones
+    os.remove(dict1)
+    os.remove(dict2)
+    os.remove(post1)
+    os.remove(post2)
 
     return nb_merged_dict
 
 
-def build_index(in_dir, out_dict, out_postings):
+def build_index(in_dir, out_dict, out_postings,path_data):
     """
     build index from documents stored in the input directory,
     then output the dictionary file and postings file
@@ -319,14 +322,10 @@ def build_index(in_dir, out_dict, out_postings):
 
     index = -1
     
-    # 
-    dict_doc = [] # at which index do we change of document ?
+    
     # We are going through all the documents
-    for docID in os.listdir("nltk_data/corpora/reuters/demo/"):
-        file = os.path.join("nltk_data/corpora/reuters/demo/", docID)
-        dict_doc.append(dictionary_written)
-        # if index > 0:
-        #     break
+    for docID in os.listdir(path_data):
+        file = os.path.join(path_data, docID)
         index +=1
 
         with open(file, 'r') as f:
@@ -366,7 +365,6 @@ def build_index(in_dir, out_dict, out_postings):
                             postingList[dictionary[token]][docID] = -1
                         
                         # No more memory available !
-                        #if False:
                         if len(dictionary) >= MEMORY :
                             dictionary = sortDict(dictionary)
                             postingList = sortPosting(postingList,dictionary)
@@ -421,57 +419,18 @@ if input_directory == None or output_file_postings == None or output_file_dictio
 
 
 # === INDEX CONSTRUCTION ===
-clean()
+try:
+    os.remove(output_file_dictionary)
+    os.remove(output_file_postings)
+    print("Former dictionary and posting list deleted.")
+except FileNotFoundError:
+    pass
 
 # Build index -> several dict and posting lists
-current_index = build_index(input_directory, output_file_dictionary, output_file_postings)
+current_index = build_index(input_directory, output_file_dictionary, output_file_postings, input_directory)
 
 # Merge to end up with one dictionary and one posting list
-dict_repo = os.listdir("index/dict/")
-post_repo = os.listdir("index/post/")
 
 dic1 = dic2 = post1 = post2 = None
 idx = 0
-input("start ?\n")
-merge("index/dict/dictionary_0.txt", "index/dict/dictionary_1.txt", "index/post/posting_0.txt", "index/post/posting_1.txt", current_index)
-# while True:
-#     if idx > 10 :
-#         print("#STOP")
-#         break 
-#     dic2 = dic1 
-#     dic1 = os.path.join("index/dict/", dict_repo[idx] )
-#     print("#### {} // {}".format(dic1,dic2))
-#     post2 = post1
-#     post1 = os.path.join("index/post/", post_repo[idx] )
-    
-#     if dic1 and dic2 and post1 and post2 :
-#         temp = current_index
-#         print("About to merge [{}] and [{}]".format(dic1,dic2))
-#         current_index = merge(dic1, dic2, post1, post2, current_index)
-#         continue_ = input("\n**continue ?**\n")
-#         #print("--> {} and {}".format(temp,current_index)) 
-#         print("compare: {} and {}".format( "index/dict/dictionary_{}.txt".format(current_index-1),"index/dict/dictionary_{}.txt".format(current_index-3) ))
-        
-#         #if False:
-#         if (len(os.listdir("index/dict/")) > 1) and (current_index-3 > 0):
-#         #if len(os.listdir("index/dict/")) > 1:
-#             if filecmp.cmp("index/dict/dictionary_{}.txt".format(current_index-1),"index/dict/dictionary_{}.txt".format(current_index-3)) : # !!!!!! check here for a different number of dict
-#                 print("STOP")
-#                 # os.remove("index/dict/dictionary_{}.txt".format(current_index-1))
-#                 # os.remove("index/post/posting_{}.txt".format(current_index-1))
-
-#                 # for index in range(current_index-3):
-#                 #     os.remove("index/dict/dictionary_{}.txt".format(index))
-#                 #     os.remove("index/post/posting_{}.txt".format(index))
-                
-#                 break
-#     idx += 1
-    
-#     if idx == len(dict_repo):
-#         print("**> updte repo")
-#         dic1 = dic2 = post1 = post2 = None
-#         idx = 0
-#         # for elt in dict_repo:
-#         #     os.remove("index/dict/{}".format(elt))
-#         dict_repo = os.listdir("index/dict/")
-#         post_repo = os.listdir("index/post/")
+merge("dictionary_0.txt", "dictionary_1.txt", "posting_0.txt", "posting_1.txt", current_index, output_file_dictionary, output_file_postings)
