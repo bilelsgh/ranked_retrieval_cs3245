@@ -61,7 +61,7 @@ index.py        - This file builds the dictionary and postings list from the reu
 search.py       - This file helps to evaluate single term queries and outputs the docID that matches the query. (example: a AND b OR c, but not ab AND bc OR cd)
 dictionary.txt  - This file contains the sorted Terms, Document Frequency and Offset to find the corresponding posting lists of the terms. 
 postings.txt    - This file contains the list of DocID for the individual Terms that we have extracted. Additionally skip pointers are also appended to speed up the search process.
-
+all_docid.txt   - The docID universe so that we are able to evaluate NOT a query
 == Statement of individual work ==
 
 Please put a "x" (without the double quotes) into the bracket of the appropriate statement.

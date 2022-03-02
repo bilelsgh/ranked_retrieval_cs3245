@@ -8,7 +8,23 @@ from string import punctuation
 
 STEMMER = stem.PorterStemmer()
 OPR = ["AND", "OR", "(", ")", "NOT"]
-NUM_DOCUMENTS = 140
+num_docs = 0 ## not sure of the value
+all_docs = []
+
+def populate_global():
+    global num_docs
+    global all_docs
+    with open("all_docid.txt", "r") as f:
+        all_docs = f.readline().strip(" ").split(" ")
+        all_docs = list(map(int, all_docs))   
+        all_docs.sort() 
+    num_docs = len(all_docs)
+    all_docs = [all_docs, False]
+    
+
+### check if token is a keyword or boolean operator
+def match_opr(token):
+    return token in OPR
 
 ### populate hashtable for easy retrieval
 def retrieve_dict(filepath):
@@ -21,22 +37,20 @@ def retrieve_dict(filepath):
 
     return dictionary
 
-### check if token is a keyword or boolean operator
-def match_opr(token):
-    return token in OPR
-
 def search_documents(token, dictionary, postings_file):
     if isinstance(token, list):
         return token
     ### if it is not the stated object do a search through posting
+    if token not in dictionary: ### if key does not exist return empty list
+        return []
     with open(postings_file, "r") as f:
         f.seek(dictionary[token][1])
         line = f.readline()
         line = line.strip("\n")
         line = line.split(" ")  ### ignoring skip pointer not implemented yet
+        line, skip = line[:dictionary[token][0]], line[dictionary[token][0]:]
         line = list(map(int, line))
-        line = list(set(line))  ### removing this later
-        line.sort()             ### removing this later
+
     return line
     
 ### iterate through posting list instead of intersection fucntion. 
@@ -73,6 +87,7 @@ def eval_and(t1, t2, dictionary, postings_file):
         return [l, 0]
     ### NOT a AND b / a AND NOT b
     else:
+        print("here")
         l = []
         l1, l2 = [], []
         if t1[1]:
@@ -88,6 +103,7 @@ def eval_and(t1, t2, dictionary, postings_file):
         return [l, False]
 
 def eval_or(t1, t2, dictionary, postings_file):
+    global num_docs
     t1[0] = search_documents(t1[0], dictionary, postings_file)
     t2[0] = search_documents(t2[0], dictionary, postings_file)
 
@@ -99,9 +115,9 @@ def eval_or(t1, t2, dictionary, postings_file):
         t2[1] = not t2[2]
     ### a OR b
     else:
-        if len(t1[0]) == NUM_DOCUMENTS:
+        if len(t1[0]) == num_docs:
             return t1
-        elif len(t2[0]) == NUM_DOCUMENTS:
+        elif len(t2[0]) == num_docs:
             return t2
         i, j = 0, 0
         l = []
@@ -154,7 +170,7 @@ def eval_query(query, dictionary, postings_file):
             l.append(eval_or(t1, t2, dictionary, postings_file))
         else: 
             l.append(query[i])
-
+    print(l)
     return l[0]
 
 def query_processing(query):
@@ -182,7 +198,8 @@ def generate_postfix_notation(query):
     query = query_processing(query)
     l = []
     opr = []
-    for token in query: # is an operand
+    for token in query: 
+        # is an operand
         if match_opr(token):
             if len(opr) == 0:
                 opr.append(token)
@@ -203,16 +220,17 @@ def generate_postfix_notation(query):
                 opr.pop()
                 if len(opr) != 0 and opr[-1] == "NOT":
                     l.append(opr.pop())
-            else: #token == "NOT"
+            #token == "NOT"
+            else: 
                 opr.append(token)
-        else: # is a keywork
+        # is a keywork
+        else: 
             l.append([token, False])
             if len(opr) != 0 and opr[-1] == "NOT":
                 l.append(opr.pop())
 
     while len(opr) != 0:
         l.append(opr.pop())
-    print(l)
     return l
 
 def usage():
@@ -227,6 +245,9 @@ def run_search(dict_file, postings_file, queries_file, results_file):
     # This is an empty method
     # Pls implement your code in below
     
+    ### keep track of all the docIDs present in the training data
+    populate_global()
+    global all_docs
     ### retrieve and populate hashtable for easy lookup of posting position
     dictionary = retrieve_dict(dict_file)          
     with open(queries_file, "r") as f1: 
@@ -238,7 +259,8 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 if isinstance(result[0], str):
                     result[0] = search_documents(result[0], dictionary, postings_file)
                 if result[1]: ### to implement negation of single object
-                    pass
+                    result = eval_and(result, all_docs, dictionary, postings_file)
+
                 f2.write(' '.join(map(str, result[0])))  
                 f2.write("\n")
     
