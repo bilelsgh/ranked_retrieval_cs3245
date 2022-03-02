@@ -59,7 +59,11 @@ def writeDict(idx,_dict,postL):
         for key,val in _dict.items():
             offset = offset+1 if offset != 0 else offset
             all_docIDS = " ".join(list(postL[str(val)].keys()))
-            post_line = "{} {}\n".format(offset,all_docIDS)
+
+            skip_pointers_list = [elt for idx,elt in enumerate( list(postL[str(val)].keys()) ) if ( len( list(postL[str(val)].keys())) > 2 ) and (idx % round( math.sqrt(len( list(postL[str(val)].keys())) ) ) == 0)]
+            skip_pointers = " ".join(skip_pointers_list)
+
+            post_line = "{} {}\n".format(all_docIDS,skip_pointers)
             new_line = "{} {} {}\n".format(key,len( postL[str(val)] ),offset)
             f.write(new_line)
             offset += len(post_line)
@@ -88,7 +92,7 @@ def writePosting(idx,post):
             all_docIDS = " ".join( sorted_docIDS )
             skip_pointers_list = [elt for idx,elt in enumerate( sorted_docIDS ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len( sorted_docIDS) ) ) == 0)]
             skip_pointers = " ".join(skip_pointers_list)
-            new_line = "{} {} {}\n".format(offset,all_docIDS,skip_pointers)
+            new_line = "{} {}\n".format(all_docIDS,skip_pointers)
             offset += len(new_line)
             f.write(new_line)
 
