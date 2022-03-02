@@ -19,7 +19,7 @@ Problems to fix :
 """
 
 
-MEMORY = 30000
+MEMORY = 99999999999999999999999999999999999999999
 PUNCTUATION = [",",".",":","!",";","?","/",")","(","\"","'"]
 STEMMER = stem.PorterStemmer()
 
@@ -431,4 +431,4 @@ current_index = build_index(input_directory, output_file_dictionary, output_file
 
 dic1 = dic2 = post1 = post2 = None
 idx = 0
-merge("dictionary_0.txt", "dictionary_1.txt", "posting_0.txt", "posting_1.txt", current_index, output_file_dictionary, output_file_postings)
+# merge("dictionary_0.txt", "dictionary_1.txt", "posting_0.txt", "posting_1.txt", current_index, output_file_dictionary, output_file_postings)
