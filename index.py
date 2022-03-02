@@ -59,8 +59,8 @@ def writeDict(idx,_dict,postL):
             skip_pointers_list = [elt for idx,elt in enumerate( list(postL[str(val)].keys()) ) if ( len( list(postL[str(val)].keys())) > 2 ) and (idx % round( math.sqrt(len( list(postL[str(val)].keys())) ) ) == 0)]
             skip_pointers = " ".join(skip_pointers_list)
 
-            post_line = "{} {}\n".format(all_docIDS,skip_pointers) 
-            new_line = "{} {} {}\n".format(key,len( postL[str(val)] ),offset)
+            post_line = "{} {}\n".format(all_docIDS,skip_pointers) if len(skip_pointers) != 0 else "{}\n".format(all_docIDS)
+            new_line = "{} {} {}\n".format(key,len( postL[str(val)] ),offset) 
             f.write(new_line)
             offset += len(post_line)+1
 
@@ -69,8 +69,11 @@ def writeMergeDict(_dict,postL,idx,start_offset,file_name):
     offset = start_offset
     with open(file_name, "a") as f:
         for key,val in _dict.items():
-            all_docIDS = " ".join(postL[val])
-            skip_pointers_list = [elt for idx,elt in enumerate( postL[val] ) if ( len( postL[val]) > 2 ) and (idx % round( math.sqrt(len( postL[val]) ) ) == 0)]
+            sorted_docIDS = [int(elt) for elt in postL[val]]
+            sorted_docIDS.sort()
+            sorted_docIDS = [str(elt) for elt in sorted_docIDS]
+            all_docIDS = " ".join(sorted_docIDS)
+            skip_pointers_list = [elt for idx,elt in enumerate( postL[val] ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len( sorted_docIDS) ) ) == 0)]
             skip_pointers = " ".join(skip_pointers_list)
 
             post_line = "{} {}\n".format(all_docIDS,skip_pointers) if len(skip_pointers) != 0 else "{}\n".format(all_docIDS)
@@ -85,6 +88,7 @@ def writeMergePosting(_post,idx,start_offset,file_name):
     offset = start_offset
     with open(file_name, "a") as f:
         for key,val in _post.items():
+
             sorted_docIDS = [int(elt) for elt in val]
             sorted_docIDS.sort()
             sorted_docIDS = [str(elt) for elt in sorted_docIDS]
@@ -181,7 +185,7 @@ def merge(dict1, dict2, post1, post2,current_index,file_dict, file_post):
                                 #Get the docIDS only, without the skip pointers
                                 docIDs_without_spointer = []
                                 former_elt = -1
-                                for elt in  p1_line.split(" ")[1:]:
+                                for elt in  p1_line.split(" "):
                                     if int(elt) > former_elt:
                                         break
                                     docIDs_without_spointer.append(elt)
