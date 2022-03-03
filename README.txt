@@ -1,4 +1,4 @@
-This is the README file for A0000000X and A0183158Y's submission             // To fill //
+This is the README file for A0248444Y and A0183158Y's submission           
 Email(s): 
 e0926090@u.nus.edu                                                           
 e0309953@u.nus.edu
@@ -16,6 +16,9 @@ in your program, and discuss your experiments in general.  A few paragraphs
 are usually sufficient.
 
 index.py:
+
+
+
 
 search.py:
 
@@ -66,7 +69,7 @@ all_docid.txt   - The docID universe so that we are able to evaluate NOT a query
 
 Please put a "x" (without the double quotes) into the bracket of the appropriate statement.
 //////////////////////////////////////////////////////////// TO BE FILLED
-[x] We, A0000000X and A0183158Y, certify that I/we have followed the CS 3245 Information
+[x] We, A0248444Y and A0183158Y, certify that I/we have followed the CS 3245 Information
 Retrieval class guidelines for homework assignments.  In particular, I/we
 expressly vow that I/we have followed the Facebook rule in discussing
 with others in doing the assignment and did not take notes (digital or

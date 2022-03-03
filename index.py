@@ -11,7 +11,6 @@ import json
 from nltk.tokenize import wordpunct_tokenize
 from nltk import stem
 from string import punctuation
-from functions import clean
 
 """
 Problems to fix :
@@ -19,7 +18,7 @@ Problems to fix :
 """
 
 
-MEMORY = 99999999999999999999999999999999999999999
+MEMORY = 30000
 PUNCTUATION = [",",".",":","!",";","?","/",")","(","\"","'"]
 STEMMER = stem.PorterStemmer()
 
@@ -70,6 +69,27 @@ def writeDict(idx,_dict,postL):
             f.write(new_line)
             offset += len(post_line)+1
 
+
+def writeMergeDict(_dict,postL,idx,start_offset,file_name):
+    offset = start_offset
+    with open(file_name, "a") as f:
+        for key,val in _dict.items():
+            sorted_docIDS = [int(elt) for elt in postL[val]]
+            sorted_docIDS.sort()
+            sorted_docIDS = [str(elt) for elt in sorted_docIDS]
+            all_docIDS = " ".join(sorted_docIDS)
+            skip_pointers_list = [elt for idx,elt in enumerate( sorted_docIDS ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len( sorted_docIDS) ) ) == 0)]
+            skip_pointers = " ".join(skip_pointers_list)
+
+            post_line = "{} {}\n".format(all_docIDS,skip_pointers) if len(skip_pointers) != 0 else "{}\n".format(all_docIDS)
+            new_line = "{} {} {}\n".format(key,len( postL[(val)] ),offset)
+            f.write(new_line)
+            offset += len(post_line)+1
+
+            #f.write("{} {} {}\n".format(key.split("/")[0],len( postL[val] ),val))
+    return offset
+
+
 def writePosting(idx,post):
     offset = 0
     with open("posting_{}.txt".format(idx), "w") as f:
@@ -80,28 +100,10 @@ def writePosting(idx,post):
             all_docIDS = " ".join( sorted_docIDS )
             skip_pointers_list = [elt for idx,elt in enumerate( sorted_docIDS ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len( sorted_docIDS) ) ) == 0)]
             skip_pointers = " ".join(skip_pointers_list)
-            new_line = "{} {}\n".format(all_docIDS,skip_pointers) if len(skip_pointers) != 0 else "{}\n".format(all_docIDS)
+            new_line = "{} {}\n".format(all_docIDS,skip_pointers) if len(skip_pointers) != 0 else "{} \n".format(all_docIDS)
             f.write(new_line)
             offset += len(new_line)+1
 
-def writeMergeDict(_dict,postL,idx,start_offset,file_name):
-    offset = start_offset
-    with open(file_name, "a") as f:
-        for key,val in _dict.items():
-            sorted_docIDS = [int(elt) for elt in postL[val]]
-            sorted_docIDS.sort()
-            sorted_docIDS = [str(elt) for elt in sorted_docIDS]
-            all_docIDS = " ".join(sorted_docIDS)
-            skip_pointers_list = [elt for idx,elt in enumerate( postL[val] ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len( sorted_docIDS) ) ) == 0)]
-            skip_pointers = " ".join(skip_pointers_list)
-
-            post_line = "{} {}\n".format(all_docIDS,skip_pointers) if len(skip_pointers) != 0 else "{}\n".format(all_docIDS)
-            new_line = "{} {} {}\n".format(key,len( postL[(val)] ),offset)
-            f.write(new_line)
-            offset += len(post_line)+1
-
-            #f.write("{} {} {}\n".format(key.split("/")[0],len( postL[val] ),val))
-    return offset
 
 def writeMergePosting(_post,idx,start_offset,file_name):
     offset = start_offset
@@ -437,4 +439,4 @@ current_index = build_index(input_directory, output_file_dictionary, output_file
 
 dic1 = dic2 = post1 = post2 = None
 idx = 0
-# merge("dictionary_0.txt", "dictionary_1.txt", "posting_0.txt", "posting_1.txt", current_index, output_file_dictionary, output_file_postings)
+merge("dictionary_0.txt", "dictionary_1.txt", "posting_0.txt", "posting_1.txt", current_index, output_file_dictionary, output_file_postings)
