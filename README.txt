@@ -17,6 +17,12 @@ are usually sufficient.
 
 index.py:
 
+To run the index.py user is required to give 3 inputs : 
+1) The data folder containing the Reuters training data set provided by NLTK using the -i option
+2) The output dictionary file using the -d option
+2) The output posting list file using the -p option
+
+The program create a dictionary and a posting list using the SPIMI Invert algorithm.
 
 
 

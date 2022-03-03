@@ -8,7 +8,7 @@ import sys
 import getopt
 import math
 import json
-from nltk.tokenize import wordpunct_tokenize
+from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk import stem
 from string import punctuation
 
@@ -69,6 +69,19 @@ def writeDict(idx,_dict,postL):
             f.write(new_line)
             offset += len(post_line)+1
 
+def writePosting(idx,post):
+    offset = 0
+    with open("posting_{}.txt".format(idx), "w") as f:
+        for postID,docIDS in post.items():
+            sorted_docIDS = [int(elt) for elt in list(docIDS.keys())]
+            sorted_docIDS.sort()
+            sorted_docIDS = [str(elt) for elt in sorted_docIDS]
+            all_docIDS = " ".join( sorted_docIDS )
+            skip_pointers_list = [elt for idx,elt in enumerate( sorted_docIDS ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len( sorted_docIDS) ) ) == 0)]
+            skip_pointers = " ".join(skip_pointers_list)
+            new_line = "{} {}\n".format(all_docIDS,skip_pointers) if len(skip_pointers) != 0 else "{} \n".format(all_docIDS)
+            f.write(new_line)
+            offset += len(new_line)+1
 
 def writeMergeDict(_dict,postL,idx,start_offset,file_name):
     offset = start_offset
@@ -90,19 +103,6 @@ def writeMergeDict(_dict,postL,idx,start_offset,file_name):
     return offset
 
 
-def writePosting(idx,post):
-    offset = 0
-    with open("posting_{}.txt".format(idx), "w") as f:
-        for postID,docIDS in post.items():
-            sorted_docIDS = [int(elt) for elt in list(docIDS.keys())]
-            sorted_docIDS.sort()
-            sorted_docIDS = [str(elt) for elt in sorted_docIDS]
-            all_docIDS = " ".join( sorted_docIDS )
-            skip_pointers_list = [elt for idx,elt in enumerate( sorted_docIDS ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len( sorted_docIDS) ) ) == 0)]
-            skip_pointers = " ".join(skip_pointers_list)
-            new_line = "{} {}\n".format(all_docIDS,skip_pointers) if len(skip_pointers) != 0 else "{} \n".format(all_docIDS)
-            f.write(new_line)
-            offset += len(new_line)+1
 
 
 def writeMergePosting(_post,idx,start_offset,file_name):
@@ -341,7 +341,7 @@ def build_index(in_dir, out_dict, out_postings,path_data):
                 stemmed_tokens_without_punct = []
 
                 #Tokenization
-                for word in line.replace("\n","").split(" ") : # "Is U.S. big?" --> ["Is", "U.S.", "big?"] 
+                for word in word_tokenize(line) : # "Is U.S. big?" --> ["Is", "U.S.", "big?"] 
                     
                     #Stemm
                     stemmed_token = (STEMMER.stem(word)) # are -> be
