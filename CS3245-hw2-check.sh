@@ -91,3 +91,5 @@ if [ "$submittedFiles" -eq "$REQUIRED_FILES" ]; then
 else
     echo -e "You have not submitted all the required files.\nPlease double check the required missing files"
 fi
+
+sleep 10

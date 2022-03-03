@@ -1,4 +1,4 @@
-This is the README file for A0248444Y and A0183158Y's submission           
+This is the README file for A0248444Y's and A0183158Y's submission           
 Email(s): 
 e0926090@u.nus.edu                                                           
 e0309953@u.nus.edu
@@ -15,18 +15,58 @@ Give an overview of your program, describe the important algorithms/steps
 in your program, and discuss your experiments in general.  A few paragraphs 
 are usually sufficient.
 
-index.py:
+# index.py:
 
-To run the index.py user is required to give 3 inputs : 
-1) The data folder containing the Reuters training data set provided by NLTK using the -i option
-2) The output dictionary file using the -d option
-2) The output posting list file using the -p option
+## RUN
+    To run the index.py user is required to give 3 inputs : 
+    1) The data folder containing the Reuters training data set provided by NLTK using the -i option
+    2) The output dictionary file using the -d option
+    2) The output posting list file using the -p option
 
-The program create a dictionary and a posting list using the SPIMI Invert algorithm.
+## OVERVIEW
+    The program create a dictionary and a set of posting lists using the SPIMI Invert algorithm. We create a dummy memory (variable MEMORY at the beginning of the program) to make the use of such an algorithm useful. 
+    
+    Thus, after the creation of our index, we obtain two dictionaries and two sets of posting lists that we have to merge. To do this, we will linearly scan the two dictionaries and the two set of posting lists line by line and create a new dictionary and a new posting list in memory. 
+   
+    When these exceeds MEMORY, we write them to the hard disk and start again with a new dictionary and a new set of posting lists. Such a merge is possible because the dictionaries and the posting lists are sorted in the alphabetical order.
+
+    For each posting list, we use skip pointers that are sqrt(L) spaced (L = length of the posting list).
+
+## FORMAT
+    In this program we use these formats :
+        
+        - dictionary : {"token": postingListID, ..}
+        
+        - posting list : {postingListID1: { docID1: -1,  docID2: -1 }, postingListID2: ... }
 
 
+        For the posting list, the value are dict data structure as it will be faster to know if a docID is in a posting list (instead of using list data structure and the "x in postingList" method that's longer)
 
-search.py:
+    
+    The output format for a dictionary is :
+        
+        term1 doc_frequency posting_list_ID1
+        
+        term2 doc_frequency posting_list_ID2
+        
+        ...
+
+        
+        The posting list IDs are nothing more than the offset (position of the read/write pointer within the file) for this line. Then, it will be possible to get the docIDS of a posting list without reading the entire posting list by using the seek() function.
+
+
+    The output format for a posting list is :
+        
+        doc_IDS1 skip_pointers1
+        
+        doc_IDS2 skip_pointers2
+        
+        ...
+
+    As we use offset as posting list ID, we don't need to write it in the posting list.
+
+
+# search.py:
 
 To run the search.py, user is required to give 4 inputs. 
 1) The dictionary file using the -d option
@@ -71,6 +111,8 @@ search.py       - This file helps to evaluate single term queries and outputs th
 dictionary.txt  - This file contains the sorted Terms, Document Frequency and Offset to find the corresponding posting lists of the terms. 
 postings.txt    - This file contains the list of DocID for the individual Terms that we have extracted. Additionally skip pointers are also appended to speed up the search process.
 all_docid.txt   - The docID universe so that we are able to evaluate NOT a query
+
+
 == Statement of individual work ==
 
 Please put a "x" (without the double quotes) into the bracket of the appropriate statement.

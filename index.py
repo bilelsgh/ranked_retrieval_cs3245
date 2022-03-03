@@ -8,7 +8,7 @@ import sys
 import getopt
 import math
 import json
-from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.tokenize import word_tokenize
 from nltk import stem
 from string import punctuation
 
@@ -19,17 +19,12 @@ Problems to fix :
 
 
 MEMORY = 30000
-PUNCTUATION = [",",".",":","!",";","?","/",")","(","\"","'"]
 STEMMER = stem.PorterStemmer()
 
 
+# === Useful function ===
 def usage():
     print("usage: " + sys.argv[0] + " -i directory-of-documents -d dictionary-file -p postings-file")
-
-def printDico(dic,post):
-    for key in list(dic.keys()):
-        print("> '{}' : \n   > #{} (size: {})".format(key,dic[key],len(post[dic[key]])))
-    print("========================\n")
 
 def sortDict(_dict):
     keys = list(_dict.keys())
@@ -49,7 +44,14 @@ def sortPosting(post,_dict):
     return res
 
 
+# === Writting functions ===
 def writeDict(idx,_dict,postL):
+    # Write a dictionary onto harddsik during the "build index" part.
+    # :param idx: index in the name of the file
+    # :param _dict: dictionary
+    # :param postL: posting list
+    # :return: void
+
     offset = 0
     with open("dictionary_{}.txt".format(idx), "w") as f:
         for key,val in _dict.items():
@@ -70,6 +72,11 @@ def writeDict(idx,_dict,postL):
             offset += len(post_line)+1
 
 def writePosting(idx,post):
+    # Write a posting list onto harddisk during the "build index" part.
+    # :param idx: index in the name of the file
+    # :param post: posting list
+    # :return: void
+
     offset = 0
     with open("posting_{}.txt".format(idx), "w") as f:
         for postID,docIDS in post.items():
@@ -83,7 +90,14 @@ def writePosting(idx,post):
             f.write(new_line)
             offset += len(new_line)+1
 
-def writeMergeDict(_dict,postL,idx,start_offset,file_name):
+def writeMergeDict(_dict,postL,start_offset,file_name):
+    # Write a dictionary onto harddisk during the merging part.
+    # :param _dict: dictionary
+    # :param postL: posting list
+    # :param start_offset: position of the read pointer in the dictionary onto the harddisk (= 0 when it is empty)
+    # :param file_name: File name of the dictionary
+    # :return offset: position of the read pointer after writing in the dictionary
+
     offset = start_offset
     with open(file_name, "a") as f:
         for key,val in _dict.items():
@@ -104,8 +118,13 @@ def writeMergeDict(_dict,postL,idx,start_offset,file_name):
 
 
 
+def writeMergePosting(_post,start_offset,file_name):
+    # Write a posting list onto harddisk during the merging part.
+    # :param post: posting list
+    # :param start_offset: position of the read pointer in the dictionary onto the harddisk (= 0 when it is empty)
+    # :param file_name: File name of the dictionary
+    # :return offset: position of the read pointer after writing in the posting file
 
-def writeMergePosting(_post,idx,start_offset,file_name):
     offset = start_offset
     with open(file_name, "a") as f:
         for key,val in _post.items():
@@ -124,14 +143,21 @@ def writeMergePosting(_post,idx,start_offset,file_name):
 
 
 
+# === Index building functions ===
 
+def merge(dict1, dict2, post1, post2,file_dict, file_post):
+    # Merge two dictionaries and two set of posting lists to endup with one dictionary and one set of posting lists. This method is used because we have a memory limit.
+    # :param dict1: A dictionary to merge with..
+    # :param dict2: .. another one
+    # :param post1: A set of posting lists to merge with ..
+    # :param post2: .. another one.
+    # :param file_dict: File name of the final dictionary
+    # :param file_post: File name of the final set of posting lists
+    # :return: void
 
-def merge(dict1, dict2, post1, post2,current_index,file_dict, file_post):
-    #print("\n -> Dic1 : {}\n -> Dic2 : {}\n -> Post1 : {}\n -> Post2 : {}\n".format(dict1,dict2,post1,post2))
     new_dict = {}
     new_post = {}
     nb_postingList = 1
-    nb_merged_dict = current_index
     with open(dict1,"r") as d1:
         with open(dict2,"r") as d2:
             with open(post1,"r") as p1:
@@ -142,22 +168,24 @@ def merge(dict1, dict2, post1, post2,current_index,file_dict, file_post):
                     d2_line = d2.readline()
                     d2_term = d2_line.split(" ")[0]
                     
+                    # Get the first posting list of the first file
                     p1_line_skP = p1.readline()
-                    p1_line_skP = [int(elt) for elt in p1_line_skP.split(" ")[:-1]] #put offset
+                    p1_line_skP = [int(elt) for elt in p1_line_skP.split(" ")[:-1]] 
                     max1 = max(p1_line_skP)
                     p1_line = []
-                    #Remove the skip pointers
+                        #Remove the skip pointers
                     for elt in p1_line_skP :
                         p1_line.append(str(elt))
                         if elt == max1 :
                             break
                     p1_line = " ".join(p1_line)
 
+                    # Get the second posting list of the first file
                     p2_line_skP = p2.readline()
                     p2_line_skP = [int(elt) for elt in p2_line_skP.split(" ")[:-1]]
                     max2 = max(p2_line_skP)
                     p2_line = []
-                    #Remove the skip pointers
+                        #Remove the skip pointers
                     for elt in p2_line_skP :
                         p2_line.append(str(elt))
                         if elt == max2 :
@@ -169,20 +197,14 @@ def merge(dict1, dict2, post1, post2,current_index,file_dict, file_post):
                     start_offset1 = 0
 
                     while(not finished):
-                        #if False:
+                        # Memory exceeded : write onto the harddisk
                         if len(new_dict) >= MEMORY:
-                            start_offset1 = writeMergeDict(new_dict,new_post,nb_merged_dict,start_offset1,file_dict)
-                            start_offset = writeMergePosting(new_post,nb_merged_dict,start_offset,file_post)
+                            start_offset1 = writeMergeDict(new_dict,new_post,start_offset1,file_dict)
+                            start_offset = writeMergePosting(new_post,start_offset,file_post)
                             new_dict = {}
                             new_post = {}
                             nb_postingList = 1
-                            nb_merged_dict += 1
 
-                        #print(" --> {} \n## {}\n".format(d1_term,d2_term))
-
-                        #print("    --> {} ## {}\n".format(d1_term=="",d2_term==""))
-                        
-                        #print("\n============\nd1_term: {}, d2_term: {}".format(d1_term,d2_term))
 
                         # The term "d1_term" appears first in the alphabetical order
                         if ( (d1_term < d2_term) and d1_term != "") or (d2_term == ""):
@@ -212,11 +234,12 @@ def merge(dict1, dict2, post1, post2,current_index,file_dict, file_post):
                             d1_line = d1.readline()
                             d1_term = d1_line.split(" ")[0]
                             
+                            # Get the next posting list
                             p1_line_skP = p1.readline()
-                            p1_line_skP = [int(elt) for elt in p1_line_skP.split(" ")[:-1]] #put offset
+                            p1_line_skP = [int(elt) for elt in p1_line_skP.split(" ")[:-1]] 
                             max1 = max(p1_line_skP) if len(p1_line_skP) != 0 else 0 
                             p1_line = []
-                            #Remove the skip pointers
+                                #Remove the skip pointers
                             for elt in p1_line_skP :
                                 p1_line.append(str(elt))
                                 if elt == max1 :
@@ -242,11 +265,12 @@ def merge(dict1, dict2, post1, post2,current_index,file_dict, file_post):
                             d2_line = d2.readline()
                             d2_term = d2_line.split(" ")[0]
                             
+                            # Get the next posting list for this file
                             p2_line_skP = p2.readline()
                             p2_line_skP = [int(elt) for elt in p2_line_skP.split(" ")[:-1]]
                             max2 = max(p2_line_skP) if len(p2_line_skP) != 0 else 0
                             p2_line = []
-                            #Remove the skip pointers
+                                #Remove the skip pointers
                             for elt in p2_line_skP :
                                 p2_line.append(str(elt))
                                 if elt == max2 :
@@ -272,11 +296,13 @@ def merge(dict1, dict2, post1, post2,current_index,file_dict, file_post):
                             # Get the next line of the posting list and the dictionary
                             d2_line = d2.readline()
                             d2_term = d2_line.split(" ")[0]
+                            
+                            # Get the next posting list for this file
                             p2_line_skP = p2.readline()
                             p2_line_skP = [int(elt) for elt in p2_line_skP.split(" ")[:-1]]
                             max2 = max(p2_line_skP) if len(p2_line_skP) != 0 else 0
                             p2_line = []
-                            #Remove the skip pointers
+                                #Remove the skip pointers
                             for elt in p2_line_skP :
                                 p2_line.append(str(elt))
                                 if elt == max2 :
@@ -286,11 +312,12 @@ def merge(dict1, dict2, post1, post2,current_index,file_dict, file_post):
                             d1_line = d1.readline()
                             d1_term = d1_line.split(" ")[0]
                             
+                            # Get the next posting list for this file
                             p1_line_skP = p1.readline()
                             p1_line_skP = [int(elt) for elt in p1_line_skP.split(" ")[:-1]] #put offset
                             max1 = max(p1_line_skP) if len(p1_line_skP) != 0 else 0
                             p1_line = []
-                            #Remove the skip pointers
+                                #Remove the skip pointers
                             for elt in p1_line_skP :
                                 p1_line.append(str(elt))
                                 if elt == max1 :
@@ -300,18 +327,16 @@ def merge(dict1, dict2, post1, post2,current_index,file_dict, file_post):
                         if d1_line == "" and d2_line == "" :
                             finished = True
     
+    # The dictionary don't exceed the memory but has to be written in the harddisk
     if len(new_dict) != 0:
-        writeMergeDict(new_dict,new_post,nb_merged_dict,start_offset1,file_dict)
-        writeMergePosting(new_post,nb_merged_dict,start_offset,file_post)
-        nb_merged_dict += 1
+        writeMergeDict(new_dict,new_post,start_offset1,file_dict)
+        writeMergePosting(new_post,start_offset,file_post)
 
     # Delete the previous dictionaries and posting lists to keep only the final ones
     os.remove(dict1)
     os.remove(dict2)
     os.remove(post1)
     os.remove(post2)
-
-    return nb_merged_dict
 
 
 def build_index(in_dir, out_dict, out_postings,path_data):
@@ -324,7 +349,7 @@ def build_index(in_dir, out_dict, out_postings,path_data):
     #Init
     dictionary_written = 0
     dictionary = {} # Format : {"token": postingListID, ..}
-    postingList = {} # Format : {postingListID1: { docID1: skipPointer,  docID2: -1 }, postingListID2: ... } -> skipPointer = a docID, -1 = no skippointer
+    postingList = {} # Format : {postingListID1: { docID1: skipPointer,  docID2: -1 }, postingListID2: ... } 
 
     index = -1
     
@@ -398,45 +423,48 @@ def build_index(in_dir, out_dict, out_postings,path_data):
 
 
 
-# === INPUT PROCESS ===
 
-input_directory = output_file_dictionary = output_file_postings = None
+if __name__ == "__main__":
 
-try:
-    opts, args = getopt.getopt(sys.argv[1:], 'i:d:p:')
-except getopt.GetoptError:
-    usage()
-    sys.exit(2)
+    # === INPUT PROCESS ===
 
-for o, a in opts:
-    if o == '-i': # input directory
-        input_directory = a
-    elif o == '-d': # dictionary file
-        output_file_dictionary = a
-    elif o == '-p': # postings file
-        output_file_postings = a
-    else:
-        assert False, "unhandled option"
+    input_directory = output_file_dictionary = output_file_postings = None
 
-if input_directory == None or output_file_postings == None or output_file_dictionary == None:
-    usage()
-    sys.exit(2)
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'i:d:p:')
+    except getopt.GetoptError:
+        usage()
+        sys.exit(2)
+
+    for o, a in opts:
+        if o == '-i': # input directory
+            input_directory = a
+        elif o == '-d': # dictionary file
+            output_file_dictionary = a
+        elif o == '-p': # postings file
+            output_file_postings = a
+        else:
+            assert False, "unhandled option"
+
+    if input_directory == None or output_file_postings == None or output_file_dictionary == None:
+        usage()
+        sys.exit(2)
 
 
 
-# === INDEX CONSTRUCTION ===
-try:
-    os.remove(output_file_dictionary)
-    os.remove(output_file_postings)
-    print("Former dictionary and posting list deleted.")
-except FileNotFoundError:
-    pass
+    # === INDEX CONSTRUCTION ===
+    try:
+        os.remove(output_file_dictionary)
+        os.remove(output_file_postings)
+        print("Former dictionary and posting list deleted.")
+    except FileNotFoundError:
+        pass
 
-# Build index -> several dict and posting lists
-current_index = build_index(input_directory, output_file_dictionary, output_file_postings, input_directory)
+    # Build index -> several dict and posting lists
+    current_index = build_index(input_directory, output_file_dictionary, output_file_postings, input_directory)
 
-# Merge to end up with one dictionary and one posting list
+    # Merge to end up with one dictionary and one posting list
 
-dic1 = dic2 = post1 = post2 = None
-idx = 0
-merge("dictionary_0.txt", "dictionary_1.txt", "posting_0.txt", "posting_1.txt", current_index, output_file_dictionary, output_file_postings)
+    dic1 = dic2 = post1 = post2 = None
+    idx = 0
+    merge("dictionary_0.txt", "dictionary_1.txt", "posting_0.txt", "posting_1.txt", output_file_dictionary, output_file_postings)
