@@ -54,9 +54,15 @@ def writeDict(idx,_dict,postL):
     offset = 0
     with open("dictionary_{}.txt".format(idx), "w") as f:
         for key,val in _dict.items():
-            all_docIDS = " ".join(list(postL[str(val)].keys()))
+            sorted_docIDS = [int(elt) for elt in list(postL[str(val)].keys())]
+            sorted_docIDS.sort()
+            sorted_docIDS = [str(elt) for elt in sorted_docIDS]
+            all_docIDS = " ".join( sorted_docIDS )
 
-            skip_pointers_list = [elt for idx,elt in enumerate( list(postL[str(val)].keys()) ) if ( len( list(postL[str(val)].keys())) > 2 ) and (idx % round( math.sqrt(len( list(postL[str(val)].keys())) ) ) == 0)]
+
+            #all_docIDS = " ".join(list(postL[str(val)].keys()))
+
+            skip_pointers_list = [elt for idx,elt in enumerate( sorted_docIDS ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len(sorted_docIDS ) ) ) == 0)]
             skip_pointers = " ".join(skip_pointers_list)
 
             post_line = "{} {}\n".format(all_docIDS,skip_pointers) if len(skip_pointers) != 0 else "{}\n".format(all_docIDS)
@@ -64,6 +70,19 @@ def writeDict(idx,_dict,postL):
             f.write(new_line)
             offset += len(post_line)+1
 
+def writePosting(idx,post):
+    offset = 0
+    with open("posting_{}.txt".format(idx), "w") as f:
+        for postID,docIDS in post.items():
+            sorted_docIDS = [int(elt) for elt in list(docIDS.keys())]
+            sorted_docIDS.sort()
+            sorted_docIDS = [str(elt) for elt in sorted_docIDS]
+            all_docIDS = " ".join( sorted_docIDS )
+            skip_pointers_list = [elt for idx,elt in enumerate( sorted_docIDS ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len( sorted_docIDS) ) ) == 0)]
+            skip_pointers = " ".join(skip_pointers_list)
+            new_line = "{} {}\n".format(all_docIDS,skip_pointers) if len(skip_pointers) != 0 else "{}\n".format(all_docIDS)
+            f.write(new_line)
+            offset += len(new_line)+1
 
 def writeMergeDict(_dict,postL,idx,start_offset,file_name):
     offset = start_offset
@@ -100,19 +119,6 @@ def writeMergePosting(_post,idx,start_offset,file_name):
             offset += len(new_line)+1
     return offset
 
-def writePosting(idx,post):
-    offset = 0
-    with open("posting_{}.txt".format(idx), "w") as f:
-        for postID,docIDS in post.items():
-            sorted_docIDS = [int(elt) for elt in list(docIDS.keys())]
-            sorted_docIDS.sort()
-            sorted_docIDS = [str(elt) for elt in sorted_docIDS]
-            all_docIDS = " ".join( sorted_docIDS )
-            skip_pointers_list = [elt for idx,elt in enumerate( sorted_docIDS ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len( sorted_docIDS) ) ) == 0)]
-            skip_pointers = " ".join(skip_pointers_list)
-            new_line = "{} {}\n".format(all_docIDS,skip_pointers)
-            f.write(new_line)
-            offset += len(new_line)+1
 
 
 
