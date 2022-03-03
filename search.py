@@ -3,6 +3,7 @@ import re
 import nltk
 import sys
 import getopt
+from math import sqrt
 from nltk import stem
 from string import punctuation
 
@@ -17,11 +18,10 @@ def populate_global():
     with open("all_docid.txt", "r") as f:
         all_docs = f.readline().strip(" ").split(" ")
         all_docs = list(map(int, all_docs))   
-        all_docs.sort() 
+        all_docs.sort()
     num_docs = len(all_docs)
     all_docs = [all_docs, False]
     
-
 ### check if token is a keyword or boolean operator
 def match_opr(token):
     return token in OPR
@@ -34,15 +34,14 @@ def retrieve_dict(filepath):
         while (line := f.readline()):
             word, freq, offset = line.split(" ")
             dictionary[word] = (int(freq), int(offset))
-
     return dictionary
 
 def search_documents(token, dictionary, postings_file):
     if isinstance(token, list):
-        return token
+        return token, []
     ### if it is not the stated object do a search through posting
     if token not in dictionary: ### if key does not exist return empty list
-        return []
+        return [], []
     with open(postings_file, "r") as f:
         f.seek(dictionary[token][1])
         line = f.readline()
@@ -50,15 +49,15 @@ def search_documents(token, dictionary, postings_file):
         line = line.split(" ")  ### ignoring skip pointer not implemented yet
         line, skip = line[:dictionary[token][0]], line[dictionary[token][0]:]
         line = list(map(int, line))
-
-    return line
+        skip = list(map(int, skip))
+        
+    return line, skip
     
 ### iterate through posting list instead of intersection fucntion. 
 def eval_and(t1, t2, dictionary, postings_file):
     ### convert the token to a list
-    t1[0] = search_documents(t1[0], dictionary, postings_file)
-    t2[0] = search_documents(t2[0], dictionary, postings_file)
-
+    t1[0], skip1 = search_documents(t1[0], dictionary, postings_file)
+    t2[0], skip2 = search_documents(t2[0], dictionary, postings_file)
     ### NOT a AND NOT b = NOT(a OR b)
     if t1[1] and t2[1]:
         t1[1] = not t1[1] 
@@ -69,25 +68,55 @@ def eval_and(t1, t2, dictionary, postings_file):
         return l 
     ### a AND b
     elif not t1[1] and not t2[1]:
-        i, j = 0, 0
-        l = []
+        i, j, k, l = 0, 0, 1, 1
+        li = []
         l1, l2 = t1[0], t2[0]
+
+        if len(skip1) != 0:
+            skip_cond1 = round(sqrt(len(l1)))
+        if len(skip2):
+            skip_cond2 = round(sqrt(len(l2)))
+
         while i < len(l1) and j < len(l2):
             ### if match move both pointers forward
             if l1[i] == l2[j]:
-                l.append(l1[i])
+                li.append(l1[i])
                 i += 1
                 j += 1
             ### t1[i] is smaller move t1 pointer forward
             elif l1[i] < l2[j]:
-                i += 1
+                if len(l1) <= 2 or k >= len(skip1): ### no skip pointers for l1 or no more skips
+                    i += 1
+                    continue
+                
+                if i % skip_cond1 == 0: ### check if can skip
+                    if skip1[k] <= l2[j]: ### if skip val <= l2 val, move i forward to skip idx
+                        i = k * skip_cond1
+                    else:
+                        i += 1
+                    k += 1
+                else:
+                    i += 1
+                    
+
             ### t2[j] is smaller move t2 pointer forward
             else:
-                j += 1
-        return [l, 0]
+                if len(l2) <= 2 or l >= len(skip2): ### no skip pointers for l2 or no more skips
+                    j += 1
+                    continue
+                if j % skip_cond2 == 0: ### check if can skip
+                    if skip2[l] <= l1[i]: ### if skip val <= l2 val, move i forward to skip idx
+                        j = l * skip_cond2
+                    else:
+                        j += 1
+                    l += 1
+                else:
+                    j += 1
+                
+
+        return [li, 0]
     ### NOT a AND b / a AND NOT b
     else:
-        print("here")
         l = []
         l1, l2 = [], []
         if t1[1]:
@@ -104,8 +133,8 @@ def eval_and(t1, t2, dictionary, postings_file):
 
 def eval_or(t1, t2, dictionary, postings_file):
     global num_docs
-    t1[0] = search_documents(t1[0], dictionary, postings_file)
-    t2[0] = search_documents(t2[0], dictionary, postings_file)
+    t1[0], skip = search_documents(t1[0], dictionary, postings_file)
+    t2[0], skip = search_documents(t2[0], dictionary, postings_file)
 
     ### NOT a OR NOT b = NOT (a AND b)
     ### NOT a OR b = NOT(a AND NOT b)
@@ -170,7 +199,6 @@ def eval_query(query, dictionary, postings_file):
             l.append(eval_or(t1, t2, dictionary, postings_file))
         else: 
             l.append(query[i])
-    print(l)
     return l[0]
 
 def query_processing(query):
@@ -257,10 +285,9 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 query = generate_postfix_notation(line)
                 result = eval_query(query, dictionary, postings_file)
                 if isinstance(result[0], str):
-                    result[0] = search_documents(result[0], dictionary, postings_file)
+                    result[0], skip = search_documents(result[0], dictionary, postings_file)
                 if result[1]: ### to implement negation of single object
                     result = eval_and(result, all_docs, dictionary, postings_file)
-
                 f2.write(' '.join(map(str, result[0])))  
                 f2.write("\n")
     
