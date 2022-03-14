@@ -83,12 +83,21 @@ def writePosting(post):
             all_docIDS = " ".join( sorted_docIDS )
             skip_pointers_list = [elt for idx,elt in enumerate( sorted_docIDS ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len( sorted_docIDS) ) ) == 0)]
             skip_pointers = " ".join(skip_pointers_list)
-            new_line = "{} {}\n".format(all_docIDS,skip_pointers) if len(skip_pointers) != 0 else "{} \n".format(all_docIDS)
+            new_line = "{} {}\n".format(all_docIDS,skip_pointers) if len(skip_pointers) != 0 else "{}\n".format(all_docIDS)
             f.write(new_line)
             offset += len(new_line)+1
 
 
+def writeDocLength(docLength):
+    # Write length of all the docID used during the indexing part.
+    # :param docLength: dictionary where key=docID and value=length of the document
+    # :return: void
 
+    offset = 0
+    with open("documents_length.txt", "w") as f:
+        for docID,length in docLength.items():
+            new_line = "{} {}\n".format(docID,length) 
+            f.write(new_line)
 
 
 # === Index building functions ===
@@ -102,9 +111,9 @@ def build_index(in_dir, out_dict, out_postings,path_data):
     print('indexing...')
 
     #Init
-    dictionary_written = 0
     dictionary = {} # Format : {"token": postingListID, ..}
     postingList = {} # Format : {postingListID1: { docID1: skipPointer,  docID2: -1 }, postingListID2: ... } 
+    document_length = {} # Format : {docID1: length, ...}
 
     index = -1
     
@@ -113,10 +122,14 @@ def build_index(in_dir, out_dict, out_postings,path_data):
     for docID in os.listdir(path_data):
         file = os.path.join(path_data, docID)
         index +=1
+        document_length[docID] = 0
+        print(docID)
 
         with open(file, 'r') as f:
 
             for line in f.readlines():
+                document_length[docID] += len(line)
+
                 # == PREPROCESS STUFF ==
                 stemmed_tokens_without_punct = []
 
@@ -156,14 +169,14 @@ def build_index(in_dir, out_dict, out_postings,path_data):
         dictionary = sortDict(dictionary)
         postingList = sortPosting(postingList,dictionary)
 
-        writePosting(dictionary_written,postingList)
-        writeDict(dictionary_written,dictionary,postingList)
-        dictionary_written += 1
+        writePosting(postingList)
+        writeDict(dictionary,postingList)
+        writeDocLength(document_length)
         dictionary = {}
         postingList = {}
 
     print("end indexing...")
-    return dictionary_written
+    return 1 #change
 
 
 
