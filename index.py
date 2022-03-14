@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 import filecmp
 import re
-from nbformat import write
 import nltk
 import os
 import sys
