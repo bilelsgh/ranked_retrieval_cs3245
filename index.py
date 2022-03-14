@@ -19,7 +19,7 @@ HOMEWORK 3
 STEMMER = stem.PorterStemmer()
 
 
-# === Useful function ===
+# === Useful functions ===
 def usage():
     print("usage: " + sys.argv[0] + " -i directory-of-documents -d dictionary-file -p postings-file")
 
@@ -40,6 +40,19 @@ def sortPosting(post,_dict):
 
     return res
 
+#temporary function for debug -> remove before submitting
+def printDico(dico,_iter):
+    print("..print")
+    idx = 0
+    iter = _iter + 15210
+    while idx < iter:
+        for key,val in dico.items():
+            if idx > 15210:
+                if idx > iter:
+                    break
+                print("{} => {}\n=====\n".format(key,val))
+            idx +=1
+
 
 # === Writting functions ===
 def writeDict(_dict,postL):
@@ -54,16 +67,14 @@ def writeDict(_dict,postL):
         for key,val in _dict.items():
             sorted_docIDS = [int(elt) for elt in list(postL[str(val)].keys())]
             sorted_docIDS.sort()
-            sorted_docIDS = [str(elt) for elt in sorted_docIDS]
-            all_docIDS = " ".join( sorted_docIDS )
+            sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], ("0000"+str(postL[str(val)][str(elt)]))[-5:] ) for elt in sorted_docIDS]
+            all_docIDS = "".join( sorted_docIDS_5dig )
+            # sorted_docIDS = [str(elt) for elt in sorted_docIDS]
+            # all_docIDS = " ".join( sorted_docIDS )
+            # skip_pointers_list = [elt for idx,elt in enumerate( sorted_docIDS ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len(sorted_docIDS ) ) ) == 0)]
+            # skip_pointers = " ".join(skip_pointers_list)
 
-
-            #all_docIDS = " ".join(list(postL[str(val)].keys()))
-
-            skip_pointers_list = [elt for idx,elt in enumerate( sorted_docIDS ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len(sorted_docIDS ) ) ) == 0)]
-            skip_pointers = " ".join(skip_pointers_list)
-
-            post_line = "{} {}\n".format(all_docIDS,skip_pointers) if len(skip_pointers) != 0 else "{}\n".format(all_docIDS)
+            post_line = "{}\n".format(all_docIDS)
             new_line = "{} {} {}\n".format(key,len( postL[str(val)] ),offset) 
             f.write(new_line)
             offset += len(post_line)+1
@@ -79,11 +90,13 @@ def writePosting(post):
         for postID,docIDS in post.items():
             sorted_docIDS = [int(elt) for elt in list(docIDS.keys())]
             sorted_docIDS.sort()
-            sorted_docIDS = [str(elt) for elt in sorted_docIDS]
-            all_docIDS = " ".join( sorted_docIDS )
-            skip_pointers_list = [elt for idx,elt in enumerate( sorted_docIDS ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len( sorted_docIDS) ) ) == 0)]
-            skip_pointers = " ".join(skip_pointers_list)
-            new_line = "{} {}\n".format(all_docIDS,skip_pointers) if len(skip_pointers) != 0 else "{}\n".format(all_docIDS)
+            #sorted_docIDS = [str(elt) for elt in sorted_docIDS]
+            sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], ("0000"+str(docIDS[str(elt)]))[-5:] ) for elt in sorted_docIDS]
+            all_docIDS = "".join( sorted_docIDS_5dig )
+            #skip_pointers_list = [elt for idx,elt in enumerate( sorted_docIDS ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len( sorted_docIDS) ) ) == 0)]
+            #skip_pointers = " ".join(skip_pointers_list)
+            #new_line = "{} {}\n".format(all_docIDS,skip_pointers) if len(skip_pointers) != 0 else "{}\n".format(all_docIDS)
+            new_line = "{}\n".format(all_docIDS)
             f.write(new_line)
             offset += len(new_line)+1
 
@@ -112,7 +125,7 @@ def build_index(in_dir, out_dict, out_postings,path_data):
 
     #Init
     dictionary = {} # Format : {"token": postingListID, ..}
-    postingList = {} # Format : {postingListID1: { docID1: skipPointer,  docID2: -1 }, postingListID2: ... } 
+    postingList = {} # Format : {postingListID1: { docID1: termFrequency,  docID2: termFrequency }, postingListID2: ... } 
     document_length = {} # Format : {docID1: length, ...}
 
     index = -1
@@ -123,7 +136,6 @@ def build_index(in_dir, out_dict, out_postings,path_data):
         file = os.path.join(path_data, docID)
         index +=1
         document_length[docID] = 0
-        print(docID)
 
         with open(file, 'r') as f:
 
@@ -155,13 +167,13 @@ def build_index(in_dir, out_dict, out_postings,path_data):
                             
                             #We add the current docID to the posting list if it is not in yet
                             try:
-                                postingList[postingListID][docID]
+                                postingList[postingListID][docID] += 1
                             except:
-                                postingList[postingListID][docID] = -1 
+                                postingList[postingListID][docID] = 1
                         except:
                             dictionary[token] = list(dictionary.values())[-1]+1 if len(dictionary.values()) != 0 else 1
                             postingList[dictionary[token]] = {}
-                            postingList[dictionary[token]][docID] = -1
+                            postingList[dictionary[token]][docID] = 1
                         
 
     # Write the current dictionary
@@ -172,6 +184,7 @@ def build_index(in_dir, out_dict, out_postings,path_data):
         writePosting(postingList)
         writeDict(dictionary,postingList)
         writeDocLength(document_length)
+        printDico(postingList,3)
         dictionary = {}
         postingList = {}
 
