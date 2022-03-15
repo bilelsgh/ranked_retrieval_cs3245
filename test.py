@@ -30,3 +30,7 @@ def getidf(docfreq, termfreq):
 ### most terms have 1 / 2 documents only hence using base 2 for now
 def getwt(tf):
     return 1 + math.log2(tf)
+
+a = {"a":(1,3),"b":(1,4),"c":(1,2),"d":(1,1)}
+sort_orders = sorted(a.items(), key=lambda x: x[1][1], reverse=True)
+print(sort_orders)

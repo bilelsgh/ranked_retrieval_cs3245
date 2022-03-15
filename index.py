@@ -10,6 +10,7 @@ import json
 from nltk.tokenize import word_tokenize
 from nltk import stem
 from string import punctuation
+import math
 
 """
 HOMEWORK 3
@@ -88,14 +89,15 @@ def writePosting(post):
     offset = 0
     with open("postings.txt", "w") as f:
         for postID,docIDS in post.items():
-            sorted_docIDS = [int(elt) for elt in list(docIDS.keys())]
-            sorted_docIDS.sort()
+            sorted_posting = sorted(docIDS.items(), key=lambda x: x[1][1], reverse=True)
+            sorted_docIDS = [int(elt[0]) for elt in sorted_posting]
+            #sorted_docIDS = [int(elt) for elt in list(sorted_posting.keys())]
+            #sorted_docIDS.sort()
             #sorted_docIDS = [str(elt) for elt in sorted_docIDS]
-            sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], ("0000"+str(docIDS[str(elt)]))[-5:] ) for elt in sorted_docIDS]
-            all_docIDS = "".join( sorted_docIDS_5dig )
-            #skip_pointers_list = [elt for idx,elt in enumerate( sorted_docIDS ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len( sorted_docIDS) ) ) == 0)]
-            #skip_pointers = " ".join(skip_pointers_list)
-            #new_line = "{} {}\n".format(all_docIDS,skip_pointers) if len(skip_pointers) != 0 else "{}\n".format(all_docIDS)
+            sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], ("0000"+str(docIDS[str(elt)][0]))[-5:] ) for elt in sorted_docIDS] #with term frequency
+            #sorted_docIDS_5dig = ["{}|{}".format( (str(elt)), (str(docIDS[str(elt)])) ) for elt in sorted_docIDS]  #with weights
+            all_docIDS = " ".join( sorted_docIDS_5dig )
+           
             new_line = "{}\n".format(all_docIDS)
             f.write(new_line)
             offset += len(new_line)+1
@@ -115,6 +117,13 @@ def writeDocLength(docLength):
 
 # === Index building functions ===
 
+def computeWeights(postingList, N):
+    print("..computing weights : N = {}".format(N))
+    for pL_Id,docs in postingList.items():
+        for docID, termFreq in docs.items():
+            weight = (1+math.log(int(termFreq)))*math.log(N/len(docs),10)
+            postingList[pL_Id][docID] = (termFreq,weight)
+    return postingList
 
 def build_index(in_dir, out_dict, out_postings,path_data):
     """
@@ -180,6 +189,7 @@ def build_index(in_dir, out_dict, out_postings,path_data):
     if len(dictionary) != 0:
         dictionary = sortDict(dictionary)
         postingList = sortPosting(postingList,dictionary)
+        postingList = computeWeights(postingList, len(os.listdir(path_data)) )
 
         writePosting(postingList)
         writeDict(dictionary,postingList)
