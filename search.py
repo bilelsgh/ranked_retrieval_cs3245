@@ -11,6 +11,7 @@ STEMMER = stem.PorterStemmer()
 OPR = ["AND", "OR", "(", ")", "NOT"]
 num_docs = 0 ## not sure of the value
 all_docs = []
+DIGITS = 5
 
 def populate_global():
     global num_docs
@@ -52,6 +53,24 @@ def search_documents(token, dictionary, postings_file):
         skip = list(map(int, skip))
         
     return line, skip
+
+
+def search_documentsV2(token, dictionary, postings_file):
+    documents = [] # Format = [(docID,tf.idf) , ...]
+
+    if isinstance(token, list):
+        return token, []
+    ### if it is not the stated object do a search through posting
+    if token not in dictionary: ### if key does not exist return empty list
+        return [], []
+    with open(postings_file, "r") as f:
+        f.seek(dictionary[token][1])
+        line = f.readline()
+        line = line.strip("\n")
+        line = line.split(" ")  ### ignoring skip pointer not implemented yet
+        documents = [ ( int(elt[:DIGITS]),float(elt[DIGITS:]) ) for elt in line ]
+        
+    return documents, []
     
 ### iterate through posting list instead of intersection fucntion. 
 def eval_and(t1, t2, dictionary, postings_file):

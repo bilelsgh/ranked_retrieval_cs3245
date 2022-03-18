@@ -94,7 +94,8 @@ def writePosting(post):
             #sorted_docIDS = [int(elt) for elt in list(sorted_posting.keys())]
             #sorted_docIDS.sort()
             #sorted_docIDS = [str(elt) for elt in sorted_docIDS]
-            sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], ("0000"+str(docIDS[str(elt)][0]))[-5:] ) for elt in sorted_docIDS] #with term frequency
+            #sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], ("0000"+str(docIDS[str(elt)][0]))[-5:] ) for elt in sorted_docIDS] #with term frequency
+            sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], (str(docIDS[str(elt)][1]))[:5] ) for elt in sorted_docIDS] #with term weights
             #sorted_docIDS_5dig = ["{}|{}".format( (str(elt)), (str(docIDS[str(elt)])) ) for elt in sorted_docIDS]  #with weights
             all_docIDS = " ".join( sorted_docIDS_5dig )
            
@@ -117,13 +118,19 @@ def writeDocLength(docLength):
 
 # === Index building functions ===
 
-def computeWeights(postingList, N):
+def computeWeights(postingLists, N):
+    # Compute idf.tf for each document of all the posting lists
+    # :param postingLists: posting lists, format : {postingListID1: {docID1: termFrequency, docID2: ...} ...}
+    # :param N: size of the collection
+    # :return: posting lists, format : {postingListID1: {docID1: (termFrequency, weight), docID2: ...} ...}
+
     print("..computing weights : N = {}".format(N))
-    for pL_Id,docs in postingList.items():
+    for pL_Id,docs in postingLists.items():
         for docID, termFreq in docs.items():
             weight = (1+math.log(int(termFreq)))*math.log(N/len(docs),10)
-            postingList[pL_Id][docID] = (termFreq,weight)
-    return postingList
+            postingLists[pL_Id][docID] = (termFreq,weight)
+    return postingLists
+    
 
 def build_index(in_dir, out_dict, out_postings,path_data):
     """
