@@ -71,7 +71,7 @@ def search_documentsV2(token, dictionary, postings_file):
         f.seek(dictionary[token][1])
         line = f.readline()
         line = line.strip("\n")
-        line = line.split(" ")  ### ignoring skip pointer not implemented yet
+        line = line.split(" ")  # For the moment we consider spaces in the posting lists
         documents = [ ( int(elt[:DIGITS]),float(elt[DIGITS:]) ) for elt in line ]
         
     return documents, []
