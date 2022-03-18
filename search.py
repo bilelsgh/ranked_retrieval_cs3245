@@ -1,17 +1,21 @@
 #!/usr/bin/python3
 import re
+import os
 import nltk
 import sys
 import getopt
-from math import sqrt
+from math import sqrt, log
 from nltk import stem
 from string import punctuation
+
+from functions import normalize
 
 STEMMER = stem.PorterStemmer()
 OPR = ["AND", "OR", "(", ")", "NOT"]
 num_docs = 0 ## not sure of the value
 all_docs = []
 DIGITS = 5
+N = len(os.listdir("nltk_data/corpora/reuters/training")) # Size of the collection
 
 def populate_global():
     global num_docs
@@ -280,6 +284,16 @@ def generate_postfix_notation(query):
         l.append(opr.pop())
     return l
 
+def queryToVector(query,dictionary,N):
+    vect = []
+    # Compute weights
+    for term in query :
+        tf_idf = (1 + log(1)) * log(N/dictionary[term][0],10)
+        vect.append( tf_idf )
+
+    return [normalize(elt,vect) for elt in vect]
+
+
 def usage():
     print("usage: " + sys.argv[0] + " -d dictionary-file -p postings-file -q file-of-queries -o output-file-of-results")
 
@@ -309,7 +323,29 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                     result = eval_and(result, all_docs, dictionary, postings_file)
                 f2.write(' '.join(map(str, result[0])))  
                 f2.write("\n")
+
+
+def run_searchV2(dict_file, postings_file, queries_file, results_file):
+    documents_vects = {} # { docID: document_vector ..}
+    dictionary = retrieve_dict(dict_file) # Get the dictionary
+
+    # Get the query 
+    with open(queries_file, "r") as file :
+        query = file.readline() # For the moment let's assume that this file contains only one query
+        query_vect = queryToVector(query,dictionary,N)
+
+    for query_term in query :
+        documents = search_documentsV2(query_term,dictionary,postings_file)
+        # TODO: build documents vectors
+
+    for document_vect in documents_vects: 
+        pass
+        # TODO: Compute score cos(document_vect,query_vect)
     
+    # TODO: return the K documents corresponding to the K higher scores
+
+
+
 
 dictionary_file = postings_file = file_of_queries = output_file_of_results = None
 
