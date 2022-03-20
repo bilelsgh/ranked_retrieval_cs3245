@@ -11,21 +11,10 @@ from string import punctuation
 from functions import normalize
 
 STEMMER = stem.PorterStemmer()
-OPR = ["AND", "OR", "(", ")", "NOT"]
-num_docs = 0 ## not sure of the value
-all_docs = []
 DIGITS = 5
 N = len(os.listdir("nltk_data/corpora/reuters/training")) # Size of the collection
-
-def populate_global():
-    global num_docs
-    global all_docs
-    with open("all_docid.txt", "r") as f:
-        all_docs = f.readline().strip(" ").split(" ")
-        all_docs = list(map(int, all_docs))   
-        all_docs.sort()
-    num_docs = len(all_docs)
-    all_docs = [all_docs, False]
+### return max 10 documents
+K = 10
     
 ### populate hashtable for easy retrieval
 def retrieve_dict(filepath):
@@ -33,18 +22,17 @@ def retrieve_dict(filepath):
     with open(filepath, "r") as f:
         ### read till eof
         while (line := f.readline()):
+            ### term, docFreq, Offset in postingslist
             word, freq, offset = line.split(" ")
             dictionary[word] = (int(freq), int(offset))
     return dictionary
 
-def search_documentsV2(token, dictionary, postings_file):
+def search_documents(token, dictionary, postings_file):
     documents = [] # Format = [(docID,tf.idf) , ...]
 
-    if isinstance(token, list):
-        return token, []
-    ### if it is not the stated object do a search through posting
-    if token not in dictionary: ### if key does not exist return empty list
-        return [], []
+    if token not in dictionary: ### if key does not exist
+        return []
+    
     with open(postings_file, "r") as f:
         f.seek(dictionary[token][1])
         line = f.readline()
@@ -52,8 +40,40 @@ def search_documentsV2(token, dictionary, postings_file):
         line = line.split(" ")  # For the moment we consider spaces in the posting lists
         documents = [ ( int(elt[:DIGITS]),float(elt[DIGITS:]) ) for elt in line ]
         
-    return documents, []
+    return documents
 
+### document_vectors = {docId: [q1_score, q2_score, ...], ...}
+### documents = [(docId1, score1), ...]
+### i represent the i'th element in the array
+def update_documentvector(document_vectors, documents, i):
+    for el in documents:
+        document_vectors[el[0]][i] = el[1]
+
+### document_vectors = {docId: [q1_score, q2_score, ...], ...}
+### query_score = [q1_score, q2_score, ...]
+def compute_cosscore(document_vectors, query_score):
+    cosscore = []
+    for docid, doc_score in document_vectors.items():
+        score = 0
+        for i in range(len(query_score)):
+            score += query_score[i] * doc_score[i]
+
+        if score != 0:
+            cosscore.append[(docid, score)]
+    return cosscore
+
+### cosscore = [(docId, cosscore), ...]
+def get_documents(cosscores):
+    cosscores.sort(key=lambda i:i[1], reverse=True) ### sort using the cosscore
+
+    ### Get only the best K number of results
+    if len(cosscores) > K:
+        cosscores = cosscores[:K]
+
+    ### return only the docId
+    return [docId[0] for docId in cosscores]
+
+### deprecated (check process_query)
 def queryToVector(query,dictionary,N):
     vect = []
     # Compute weights
@@ -63,10 +83,9 @@ def queryToVector(query,dictionary,N):
 
     return [normalize(elt,vect) for elt in vect]
 
-def process_query(query):
-    
+def process_query(query, dictionary):
     tokens = {}
-    token_vector = [] 
+    queries = [] 
     for word in query:
         ### pre-process tokens similar to index
         token = (STEMMER.stem(word)) 
@@ -76,15 +95,20 @@ def process_query(query):
             tokens[token] += 1
         else:
             tokens[token] = 1
-            token_vector.append(token)  ### get all distinct tokens
+            queries.append(token)  ### get all distinct tokens
 
     ### compute the tf-idf
-    for i in range(len(token_vector)):
-        pass
+    token_wtidf = []
+    for i in range(len(queries)):
+        token = queries[i]
+        ### tf using lg 2 since queries normally are smaller in size
+        tf_idf = (1 + log(tokens[token]), 2) * log(N/dictionary[token][0], 10) ### TODO: Check the data structure for dictionary and change accordingly
+        token_wtidf.append(tf_idf)
 
-
-    
-
+    ### get normalized score for token
+    token_score = [normalize(tf, token_wtidf) for tf in token_wtidf] ### TODO: does normalizing use the score itself or tf?
+    return queries, token_score
+        
 
 def usage():
     print("usage: " + sys.argv[0] + " -d dictionary-file -p postings-file -q file-of-queries -o output-file-of-results")
@@ -96,24 +120,24 @@ def run_search(dict_file, postings_file, queries_file, results_file):
     # Get the query 
     with open(queries_file, "r") as file :              
         with open(results_file, "w") as result_file: # for every query we need to write
-            while query := file.readline():          
-                query_vect = queryToVector(query,dictionary,N)
+            while query := file.readline():
+                ### compute scores for the query and keep track of the ordering for the queries          
+                queries, token_score = process_query(query,dictionary)
 
-                for query_term in query :
-                    documents = search_documentsV2(query_term,dictionary,postings_file)
+                ### brute forcing, ensure all the dictionary is populate
+                for key in dictionary.keys():
+                    documents_vects[key] = [0 * len(queries)]
+
+                for i in range(len(queries)):
+                    documents = search_documents(queries[i],dictionary,postings_file)
+                    update_documentvector(documents_vects, documents, i)
                     # TODO: build documents vectors
 
-                for document_vect in documents_vects: 
-                    pass
-                    # TODO: Compute score cosscore(document_vect,query_vect)
+                cosscores = compute_cosscore(documents_vects,token_score)
+                result = get_documents(cosscores)
 
-                result_file.write()
+                result_file.write(' '.join(result))
                 result_file.write("\n")
-    
-    # TODO: return the K documents corresponding to the K higher scores
-
-
-
 
 dictionary_file = postings_file = file_of_queries = output_file_of_results = None
 
