@@ -6,18 +6,36 @@ import sys
 import getopt
 from math import sqrt, log
 from nltk import stem
+from nltk.tokenize import word_tokenize
 from string import punctuation
 
 from functions import normalize
 
 STEMMER = stem.PorterStemmer()
 DIGITS = 5
-N = len(os.listdir("nltk_data/corpora/reuters/training")) # Size of the collection
+PATH = os.listdir("nltk_data/corpora/reuters/demo")
+N = len(PATH) # Size of the collection
 ### return max 10 documents
 K = 10
-    
-### populate hashtable for easy retrieval
+
+
+def normalize_docScore(docID, score):
+    # Normalize a document's score with the document's length we compute at the indexing time
+    # :param docID: (int) document ID
+    # :param score: (float) current document's score
+    # :return: (float) document's normalized score, -1 if we didn't find the document length 
+    with open("documents_length.txt","r") as f:
+        while(l:=f.readline()) : 
+            if int(l.split(" ")[0]) == docID :
+                return score/int(l.split(" ")[1])
+    return -1
+
+
 def retrieve_dict(filepath):
+    # Populate hashtable for easy retrieval
+    # :param filepath: path of the dictionary file
+    # :return: dictionary object -> format : {term1: (termFrequency, offset)...}
+
     dictionary = {}
     with open(filepath, "r") as f:
         ### read till eof
@@ -26,6 +44,40 @@ def retrieve_dict(filepath):
             word, freq, offset = line.split(" ")
             dictionary[word] = (int(freq), int(offset))
     return dictionary
+
+
+def update_documentvector(document_vectors, documents, i):
+    # :param document_vectors: Vector representations of all the documents -> format: {docId: [q1_weight, q2_weight, ...], ...} qX_score representing the weight for the X-th term of the query
+    # :param documents: Document's score [(docId1, score1), ...]
+    # :param i: Represents the i'th element in the array
+    for el in documents:
+        document_vectors[el[0]][i] = el[1]
+
+def compute_cosscore(document_vectors, query_score):
+    # :param document_vectors: Vector representations of all the documents -> format: {docId: [q1_weight, q2_weight, ...], ...}
+    # :param query_score: Vector representation of the query -> format : [q1_weight, q2_weight, ...], qX_weight representing the weight for the X-th term of the query
+
+    cosscore = []
+    for docid, doc_score in document_vectors.items():
+        score = 0
+        for i in range(len(query_score)):
+            score += query_score[i] * doc_score[i]
+
+        if score != 0:
+            cosscore.append((docid, normalize_docScore(docid,score)))
+    return cosscore
+
+### cosscore = [(docId, cosscore), ...]
+def get_documents(cosscores):
+    cosscores.sort(key=lambda i:i[1], reverse=True) ### sort using the cosscore
+
+    ### Get only the best K number of results
+    if len(cosscores) > K:
+        cosscores = cosscores[:K]
+
+    ### return only the docId
+    return [str(docId[0]) for docId in cosscores]
+
 
 def search_documents(token, dictionary, postings_file):
     documents = [] # Format = [(docID,tf.idf) , ...]
@@ -40,69 +92,31 @@ def search_documents(token, dictionary, postings_file):
         line = line.split(" ")  # For the moment we consider spaces in the posting lists
         documents = [ ( int(elt[:DIGITS]),float(elt[DIGITS:]) ) for elt in line ]
         
+        
     return documents
-
-### document_vectors = {docId: [q1_score, q2_score, ...], ...}
-### documents = [(docId1, score1), ...]
-### i represent the i'th element in the array
-def update_documentvector(document_vectors, documents, i):
-    for el in documents:
-        document_vectors[el[0]][i] = el[1]
-
-### document_vectors = {docId: [q1_score, q2_score, ...], ...}
-### query_score = [q1_score, q2_score, ...]
-def compute_cosscore(document_vectors, query_score):
-    cosscore = []
-    for docid, doc_score in document_vectors.items():
-        score = 0
-        for i in range(len(query_score)):
-            score += query_score[i] * doc_score[i]
-
-        if score != 0:
-            cosscore.append[(docid, score)]
-    return cosscore
-
-### cosscore = [(docId, cosscore), ...]
-def get_documents(cosscores):
-    cosscores.sort(key=lambda i:i[1], reverse=True) ### sort using the cosscore
-
-    ### Get only the best K number of results
-    if len(cosscores) > K:
-        cosscores = cosscores[:K]
-
-    ### return only the docId
-    return [docId[0] for docId in cosscores]
-
-### deprecated (check process_query)
-def queryToVector(query,dictionary,N):
-    vect = []
-    # Compute weights
-    for term in query :
-        tf_idf = (1 + log(1)) * log(N/dictionary[term][0],10)
-        vect.append( tf_idf )
-
-    return [normalize(elt,vect) for elt in vect]
 
 def process_query(query, dictionary):
     tokens = {}
     queries = [] 
-    for word in query:
+    for word in word_tokenize(query):
         ### pre-process tokens similar to index
         token = (STEMMER.stem(word)) 
         token = token.strip(punctuation).split(" ")
+
         ### maintain tf for the token
-        if token in tokens:
-            tokens[token] += 1
+        if token[0] in tokens:
+            tokens[token[0]] += 1
         else:
-            tokens[token] = 1
-            queries.append(token)  ### get all distinct tokens
+            tokens[token[0]] = 1
+            queries.append(token[0])  ### get all distinct tokens
 
     ### compute the tf-idf
     token_wtidf = []
     for i in range(len(queries)):
         token = queries[i]
+
         ### tf using lg 2 since queries normally are smaller in size
-        tf_idf = (1 + log(tokens[token]), 2) * log(N/dictionary[token][0], 10) ### TODO: Check the data structure for dictionary and change accordingly
+        tf_idf = (1 + log(tokens[token], 2)) * log(N/dictionary[token][0], 10) ### TODO: Check the data structure for dictionary and change accordingly -> ok with the structure
         token_wtidf.append(tf_idf)
 
     ### get normalized score for token
@@ -114,26 +128,34 @@ def usage():
     print("usage: " + sys.argv[0] + " -d dictionary-file -p postings-file -q file-of-queries -o output-file-of-results")
 
 def run_search(dict_file, postings_file, queries_file, results_file):
-    documents_vects = {} # { docID: document_vector ..}
     dictionary = retrieve_dict(dict_file) # Get the dictionary
 
     # Get the query 
     with open(queries_file, "r") as file :              
         with open(results_file, "w") as result_file: # for every query we need to write
             while query := file.readline():
-                ### compute scores for the query and keep track of the ordering for the queries          
+                documents_vects = {} # { docID: document_vector ..}
+                
+                ### compute scores for the query and keep track of the ordering for the queries         
+                print("Query : '{}'".format(query)) 
                 queries, token_score = process_query(query,dictionary)
 
-                ### brute forcing, ensure all the dictionary is populate
-                for key in dictionary.keys():
-                    documents_vects[key] = [0 * len(queries)]
+                
 
-                for i in range(len(queries)):
-                    documents = search_documents(queries[i],dictionary,postings_file)
+                for i,query in enumerate(queries):
+                    documents = search_documents(query,dictionary,postings_file)
+                    
+                    # Create a vector for the documents if they don't already exist
+                    for elt in documents:
+                        try:
+                            documents_vects[int(elt[0])]
+                        except:
+                            documents_vects[int(elt[0])] = [0]*len(queries)
+                            
                     update_documentvector(documents_vects, documents, i)
-                    # TODO: build documents vectors
 
                 cosscores = compute_cosscore(documents_vects,token_score)
+                print(cosscores)
                 result = get_documents(cosscores)
 
                 result_file.write(' '.join(result))

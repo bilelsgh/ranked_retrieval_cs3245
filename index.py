@@ -60,20 +60,15 @@ def writeDict(_dict,postL):
     # Write a dictionary onto harddsik during the "build index" part.
     # :param idx: index in the name of the file
     # :param _dict: dictionary
-    # :param postL: posting list
+    # :param postL: posting list {postingListID1: {docID1: (termFrequency, weight), docID2: ...} ...}
     # :return: void
-
     offset = 0
     with open("dictionary.txt", "w") as f:
         for key,val in _dict.items():
             sorted_docIDS = [int(elt) for elt in list(postL[str(val)].keys())]
             sorted_docIDS.sort()
-            sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], ("0000"+str(postL[str(val)][str(elt)]))[-5:] ) for elt in sorted_docIDS]
-            all_docIDS = "".join( sorted_docIDS_5dig )
-            # sorted_docIDS = [str(elt) for elt in sorted_docIDS]
-            # all_docIDS = " ".join( sorted_docIDS )
-            # skip_pointers_list = [elt for idx,elt in enumerate( sorted_docIDS ) if ( len( sorted_docIDS) > 2 ) and (idx % round( math.sqrt(len(sorted_docIDS ) ) ) == 0)]
-            # skip_pointers = " ".join(skip_pointers_list)
+            sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], (str(postL[str(val)][str(elt)][1]))[:5] ) for elt in sorted_docIDS]
+            all_docIDS = " ".join( sorted_docIDS_5dig )
 
             post_line = "{}\n".format(all_docIDS)
             new_line = "{} {} {}\n".format(key,len( postL[str(val)] ),offset) 
@@ -83,20 +78,14 @@ def writeDict(_dict,postL):
 def writePosting(post):
     # Write a posting list onto harddisk during the "build index" part.
     # :param idx: index in the name of the file
-    # :param post: posting list
+    # :param post: posting list {postingListID1: {docID1: (termFrequency, weight), docID2: ...} ...}
     # :return: void
-
     offset = 0
     with open("postings.txt", "w") as f:
         for postID,docIDS in post.items():
             sorted_posting = sorted(docIDS.items(), key=lambda x: x[1][1], reverse=True)
             sorted_docIDS = [int(elt[0]) for elt in sorted_posting]
-            #sorted_docIDS = [int(elt) for elt in list(sorted_posting.keys())]
-            #sorted_docIDS.sort()
-            #sorted_docIDS = [str(elt) for elt in sorted_docIDS]
-            #sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], ("0000"+str(docIDS[str(elt)][0]))[-5:] ) for elt in sorted_docIDS] #with term frequency
             sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], (str(docIDS[str(elt)][1]))[:5] ) for elt in sorted_docIDS] #with term weights
-            #sorted_docIDS_5dig = ["{}|{}".format( (str(elt)), (str(docIDS[str(elt)])) ) for elt in sorted_docIDS]  #with weights
             all_docIDS = " ".join( sorted_docIDS_5dig )
            
             new_line = "{}\n".format(all_docIDS)
@@ -190,7 +179,7 @@ def build_index(in_dir, out_dict, out_postings,path_data):
                             dictionary[token] = list(dictionary.values())[-1]+1 if len(dictionary.values()) != 0 else 1
                             postingList[dictionary[token]] = {}
                             postingList[dictionary[token]][docID] = 1
-                        
+                       
 
     # Write the current dictionary
     if len(dictionary) != 0:
@@ -201,7 +190,7 @@ def build_index(in_dir, out_dict, out_postings,path_data):
         writePosting(postingList)
         writeDict(dictionary,postingList)
         writeDocLength(document_length)
-        printDico(postingList,3)
+        #printDico(postingList,3)
         dictionary = {}
         postingList = {}
 
