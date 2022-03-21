@@ -22,7 +22,7 @@ PATH = os.listdir("nltk_data/corpora/reuters/training")
 N = len(PATH) # Size of the collection
 ### return max 10 documents
 K = 10
-WEIGHT_THRESHOLD = 0.5
+WEIGHT_THRESHOLD = 0.35
 
 
 def normalize_docScore(docID, score):
@@ -70,8 +70,8 @@ def compute_cosscore(document_vectors, query_score):
             score += query_score[i] * doc_score[i]
 
         if score != 0:
-            cosscore.append((docid, normalize_docScore(docid,score)))
-#            cosscore.append((docid, score))
+            cosscore.append((docid, normalize_docScore(docid,score))) # normalization with document length
+#            cosscore.append((docid, score/len(doc_score))) # normalization with document vector length
     return cosscore
 
 ### cosscore = [(docId, cosscore), ...]
