@@ -18,7 +18,7 @@ TODO :
 
 STEMMER = stem.PorterStemmer()
 DIGITS = 5
-PATH = os.listdir("nltk_data/corpora/reuters/demo")
+PATH = os.listdir("nltk_data/corpora/reuters/training")
 N = len(PATH) # Size of the collection
 ### return max 10 documents
 K = 10
@@ -97,7 +97,17 @@ def search_documents(token, dictionary, postings_file):
         line = f.readline()
         line = line.strip("\n")
         line = line.split(" ")  # For the moment we consider spaces in the posting lists
-        documents = [ ( int(elt[:DIGITS]),float(elt[DIGITS:]) ) for elt in line ]
+        #documents = [ ( int(elt[:DIGITS]),float(elt[DIGITS:]) ) for elt in line  ]
+
+        # Only consider the documents with high enough weight *Heur3*
+        documents = []
+        for elt in line:
+            docID_weight = ( int(elt[:DIGITS]),float(elt[DIGITS:]) ) # (docID,tf.idf)
+            if ( docID_weight[1] ) > WEIGHT_THRESHOLD :
+                documents.append(docID_weight)
+            else:
+                break
+        print(" >> {}".format(len(documents)))
         
         
     return documents
