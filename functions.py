@@ -12,7 +12,6 @@ def normalize(tf, li):
         deno += math.pow(i, 2)
 
     deno = math.sqrt(deno)
-
     return tf / deno
 
 ### both parameters are list

@@ -11,6 +11,11 @@ from string import punctuation
 
 from functions import normalize
 
+"""
+TODO :
+    - a word is not in the dictionary 
+"""
+
 STEMMER = stem.PorterStemmer()
 DIGITS = 5
 PATH = os.listdir("nltk_data/corpora/reuters/demo")
@@ -116,7 +121,7 @@ def process_query(query, dictionary):
         token = queries[i]
 
         ### tf using lg 2 since queries normally are smaller in size
-        tf_idf = (1 + log(tokens[token], 2)) * log(N/dictionary[token][0], 10) ### TODO: Check the data structure for dictionary and change accordingly -> ok with the structure
+        tf_idf = (1 + log(tokens[token], 2)) * log(N/dictionary[token][0], 10) ### TODO: Check the data structure for dictionary and change accordingly -> ok with the data structure
         token_wtidf.append(tf_idf)
 
     ### get normalized score for token
@@ -143,6 +148,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 
 
                 for i,query in enumerate(queries):
+                    print("..search documents")
                     documents = search_documents(query,dictionary,postings_file)
                     
                     # Create a vector for the documents if they don't already exist
@@ -151,11 +157,19 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                             documents_vects[int(elt[0])]
                         except:
                             documents_vects[int(elt[0])] = [0]*len(queries)
-                            
+                    print("..update documents weights")
                     update_documentvector(documents_vects, documents, i)
 
+                # Normalize documents vectors
+                for docID, weights in documents_vects.items():
+                    all_weights = [elt for elt in weights]
+                    for idx,weight in enumerate(weights):
+                        documents_vects[docID][idx] = normalize(weight,all_weights)
+
+                print("..compute cosscore")
                 cosscores = compute_cosscore(documents_vects,token_score)
                 print(cosscores)
+                print("..get documents")
                 result = get_documents(cosscores)
 
                 result_file.write(' '.join(result))
