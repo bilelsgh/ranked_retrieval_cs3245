@@ -18,10 +18,11 @@ TODO :
 
 STEMMER = stem.PorterStemmer()
 DIGITS = 5
-PATH = os.listdir("nltk_data/corpora/reuters/training")
+PATH = os.listdir("nltk_data/corpora/reuters/demo")
 N = len(PATH) # Size of the collection
 ### return max 10 documents
 K = 10
+WEIGHT_THRESHOLD = 0.5
 
 
 def normalize_docScore(docID, score):
@@ -125,9 +126,13 @@ def process_query(query, dictionary):
         tf_idf = (1 + log(tokens[token], 2)) * log(N/dictionary[token][0], 10) ### TODO: Check the data structure for dictionary and change accordingly -> ok with the data structure
         token_wtidf.append(tf_idf)
 
-    ### get normalized score for token
-    token_score = [normalize(tf, token_wtidf) for tf in token_wtidf] ### TODO: does normalizing use the score itself or tf?
-    return queries, token_score
+    ### get normalized score for token AND get rid of the terms with low tf_idf *Heur3*
+    queries_and_score = [(queries[i],normalize(tf, token_wtidf)) for i,tf in enumerate(token_wtidf) if normalize(tf, token_wtidf) > WEIGHT_THRESHOLD]
+    queries_and_score.sort(key=lambda i:i[1], reverse=True) # Sort the query by weight *Heur3*
+
+    token_score = [elt[1] for elt in queries_and_score] ### TODO: does normalizing use the score itself or tf?
+    queries_sorted = [elt[0] for elt in queries_and_score]
+    return queries_sorted, token_score
         
 
 def usage():
@@ -145,6 +150,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 ### compute scores for the query and keep track of the ordering for the queries         
                 print("Query : '{}'".format(query)) 
                 queries, token_score = process_query(query,dictionary)
+                print(queries,token_score)
 
                 
 

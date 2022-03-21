@@ -85,9 +85,9 @@ def writePosting(post):
     offset = 0
     with open("postings.txt", "w") as f:
         for postID,docIDS in post.items():
-            #sorted_posting = sorted(docIDS.items(), key=lambda x: x[1][1], reverse=True) # sort according to weights
-            #sorted_docIDS = [int(elt[0]) for elt in sorted_posting]
-            sorted_docIDS = [int(elt) for elt in list(docIDS.keys())]
+            sorted_posting = sorted(docIDS.items(), key=lambda x: x[1][1], reverse=True) # sort according to weights *Heur3*
+            sorted_docIDS = [int(elt[0]) for elt in sorted_posting]
+            #sorted_docIDS = [int(elt) for elt in list(docIDS.keys())]
             sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], (str(docIDS[str(elt)][1]))[:5] ) for elt in sorted_docIDS] #with term weights
             all_docIDS = " ".join( sorted_docIDS_5dig )
            
