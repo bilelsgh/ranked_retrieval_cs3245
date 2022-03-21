@@ -18,7 +18,7 @@ TODO :
 
 STEMMER = stem.PorterStemmer()
 DIGITS = 5
-PATH = os.listdir("nltk_data/corpora/reuters/demo")
+PATH = os.listdir("nltk_data/corpora/reuters/training")
 N = len(PATH) # Size of the collection
 ### return max 10 documents
 K = 10
@@ -69,7 +69,8 @@ def compute_cosscore(document_vectors, query_score):
             score += query_score[i] * doc_score[i]
 
         if score != 0:
-            cosscore.append((docid, normalize_docScore(docid,score)))
+#            cosscore.append((docid, normalize_docScore(docid,score)))
+            cosscore.append((docid, score))
     return cosscore
 
 ### cosscore = [(docId, cosscore), ...]
@@ -168,7 +169,6 @@ def run_search(dict_file, postings_file, queries_file, results_file):
 
                 print("..compute cosscore")
                 cosscores = compute_cosscore(documents_vects,token_score)
-                print(cosscores)
                 print("..get documents")
                 result = get_documents(cosscores)
 
