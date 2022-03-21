@@ -13,7 +13,7 @@ from functions import normalize
 
 """
 TODO :
-    - a word is not in the dictionary 
+    - if a word is not in the dictionary 
 """
 
 STEMMER = stem.PorterStemmer()
@@ -69,8 +69,8 @@ def compute_cosscore(document_vectors, query_score):
             score += query_score[i] * doc_score[i]
 
         if score != 0:
-#            cosscore.append((docid, normalize_docScore(docid,score)))
-            cosscore.append((docid, score))
+            cosscore.append((docid, normalize_docScore(docid,score)))
+#            cosscore.append((docid, score))
     return cosscore
 
 ### cosscore = [(docId, cosscore), ...]
