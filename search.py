@@ -33,7 +33,7 @@ def normalize_docScore(docID, score):
     with open("documents_length.txt","r") as f:
         while(l:=f.readline()) : 
             if int(l.split(" ")[0]) == docID :
-                return score/int(l.split(" ")[1])
+                return score/sqrt(float(l.split(" ")[1]))
     return -1
 
 
@@ -71,7 +71,6 @@ def compute_cosscore(document_vectors, query_score):
 
         if score != 0:
             cosscore.append((docid, normalize_docScore(docid,score))) # normalization with document length
-#            cosscore.append((docid, score/len(doc_score))) # normalization with document vector length
     return cosscore
 
 ### cosscore = [(docId, cosscore), ...]

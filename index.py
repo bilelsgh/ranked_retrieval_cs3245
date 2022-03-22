@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import filecmp
+from pydoc import doc
 import re
 import nltk
 import os
@@ -96,18 +97,6 @@ def writePosting(post):
             offset += len(new_line)+1
 
 
-def writeDocLength(docLength):
-    # Write length of all the docID used during the indexing part.
-    # :param docLength: dictionary where key=docID and value=length of the document
-    # :return: void
-
-    offset = 0
-    with open("documents_length.txt", "w") as f:
-        for docID,length in docLength.items():
-            new_line = "{} {}\n".format(docID,length) 
-            f.write(new_line)
-
-
 # === Index building functions ===
 
 def computeWeights(postingLists, N):
@@ -116,11 +105,23 @@ def computeWeights(postingLists, N):
     # :param N: size of the collection
     # :return: posting lists, format : {postingListID1: {docID1: (termFrequency, weight), docID2: ...} ...}
 
+    documents_length = {}
     print("..computing weights : N = {}".format(N))
     for pL_Id,docs in postingLists.items():
         for docID, termFreq in docs.items():
-            weight = (1+math.log(int(termFreq)))*math.log(N/len(docs),10)
+            weight = (1+math.log(int(termFreq)))*math.log(N/len(docs),10) # here  cheeeeeeeeeeeeeeeeeeeeeeeeeck
             postingLists[pL_Id][docID] = (termFreq,weight)
+
+            # Update document length
+            try : 
+                documents_length[docID] += weight**2
+            except :
+                documents_length[docID] = weight**2
+
+    # Export the length for normalization
+    with open("documents_length.txt", "w") as f:
+        for docID, length in documents_length.items():
+            f.write("{} {}\n".format(docID,length))
 
     return postingLists
     
@@ -135,7 +136,6 @@ def build_index(in_dir, out_dict, out_postings,path_data):
     #Init
     dictionary = {} # Format : {"token": postingListID, ..}
     postingList = {} # Format : {postingListID1: { docID1: termFrequency,  docID2: termFrequency }, postingListID2: ... } 
-    document_length = {} # Format : {docID1: length, ...}
 
     index = -1
     
@@ -144,12 +144,10 @@ def build_index(in_dir, out_dict, out_postings,path_data):
     for docID in os.listdir(path_data):
         file = os.path.join(path_data, docID)
         index +=1
-        document_length[docID] = 0
 
         with open(file, 'r') as f:
 
             for line in f.readlines():
-                document_length[docID] += len(line)
 
                 # == PREPROCESS STUFF ==
                 stemmed_tokens_without_punct = []
@@ -193,7 +191,6 @@ def build_index(in_dir, out_dict, out_postings,path_data):
 
         writePosting(postingList)
         writeDict(dictionary,postingList)
-        writeDocLength(document_length)
         #printDico(postingList,3)
         dictionary = {}
         postingList = {}
