@@ -109,7 +109,7 @@ def computeWeights(postingLists, N):
     print("..computing weights : N = {}".format(N))
     for pL_Id,docs in postingLists.items():
         for docID, termFreq in docs.items():
-            weight = (1+math.log(int(termFreq), 10)) # here  cheeeeeeeeeeeeeeeeeeeeeeeeeck
+            weight = (1+math.log(int(termFreq), 10)) 
             postingLists[pL_Id][docID] = (termFreq,weight)
 
             # Update document length
