@@ -102,10 +102,10 @@ def search_documents(token, dictionary, postings_file):
         documents = []
         for elt in line:
             docID_weight = ( int(elt[:DIGITS]),float(elt[DIGITS:]) ) # (docID,tf.idf)
-            if ( docID_weight[1] ) > WEIGHT_THRESHOLD :
-                documents.append(docID_weight)
-            else:
-                break
+            # if ( docID_weight[1] ) > WEIGHT_THRESHOLD :
+            documents.append(docID_weight)
+            # else:
+                # break
         print(" >> {}".format(len(documents)))
         
         
@@ -134,11 +134,13 @@ def process_query(query, dictionary):
         ### tf using lg 2 since queries normally are smaller in size
         tf_idf = (1 + log(tokens[token], 2)) * log(N/dictionary[token][0], 10) ### TODO: Check the data structure for dictionary and change accordingly -> ok with the data structure
         token_wtidf.append(tf_idf)
-
+    
+    return queries, token_wtidf
+    
     ### get normalized score for token AND get rid of the terms with low tf_idf *Heur3*
     queries_and_score = [(queries[i],normalize(tf, token_wtidf)) for i,tf in enumerate(token_wtidf) if normalize(tf, token_wtidf) > WEIGHT_THRESHOLD]
     queries_and_score.sort(key=lambda i:i[1], reverse=True) # Sort the query by weight *Heur3*
-
+    
     token_score = [elt[1] for elt in queries_and_score] ### TODO: does normalizing use the score itself or tf?
     queries_sorted = [elt[0] for elt in queries_and_score]
     return queries_sorted, token_score
@@ -166,7 +168,6 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 for i,query in enumerate(queries):
                     print("..search documents")
                     documents = search_documents(query,dictionary,postings_file)
-                    
                     # Create a vector for the documents if they don't already exist
                     for elt in documents:
                         try:
@@ -177,10 +178,10 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                     update_documentvector(documents_vects, documents, i)
 
                 # Normalize documents vectors
-                for docID, weights in documents_vects.items():
-                    all_weights = [elt for elt in weights]
-                    for idx,weight in enumerate(weights):
-                        documents_vects[docID][idx] = normalize(weight,all_weights)
+                # for docID, weights in documents_vects.items():
+                #     all_weights = [elt for elt in weights]
+                #     for idx,weight in enumerate(weights):
+                #         documents_vects[docID][idx] = normalize(weight,all_weights)
 
                 print("..compute cosscore")
                 cosscores = compute_cosscore(documents_vects,token_score)
