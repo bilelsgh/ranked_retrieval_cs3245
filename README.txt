@@ -2,18 +2,12 @@ This is the README file for A0248444Y's and A0183158Y's submission
 Email(s): 
 e0926090@u.nus.edu                                                           
 e0309953@u.nus.edu
+
 == Python Version ==
-
-Brian is using 3.8.10
-
-I'm (We're) using Python Version <3.7.6 or replace version number> for
-this assignment.
+A0183158Y is using 3.8.10
+A0248444Y is using 3.9.5
 
 == General Notes about this assignment ==
-
-Give an overview of your program, describe the important algorithms/steps 
-in your program, and discuss your experiments in general.  A few paragraphs 
-are usually sufficient.
 
 # index.py:
 
@@ -24,24 +18,21 @@ are usually sufficient.
     2) The output posting list file using the -p option
 
 ## OVERVIEW
-    The program create a dictionary and a set of posting lists using the SPIMI Invert algorithm. We create a dummy memory (variable MEMORY at the beginning of the program) to make the use of such an algorithm useful. 
-    
-    Thus, after the creation of our index, we obtain two dictionaries and two sets of posting lists that we have to merge. To do this, we will linearly scan the two dictionaries and the two set of posting lists line by line and create a new dictionary and a new posting list in memory. 
-   
-    When these exceeds MEMORY, we write them to the hard disk and start again with a new dictionary and a new set of posting lists. Such a merge is possible because the dictionaries and the posting lists are sorted in the alphabetical order.
-
-    For each posting list, we use skip pointers that are sqrt(L) spaced (L = length of the posting list).
+    The program create a dictionary and a set of posting lists assuming we have infinite memory (unlike to the previous homework where SPIMI invert algorithm was used). 
+   Each token is first preprocessed (stemmatization, remove punctuation etc.) to improve the search and end up lighter dictionary and set of posting lists.
+    Thus, after the creation of our index, we obtain one single dictionary and one single set of posting lists.
+   In the posting lists, we replace term frequency by weight (= 1+log10(termFrequency)  ) that will be used at the query time to compute the score of each document. We chose not to use idf because with it documents containing only a part of the query terms but in large numbers are considered more relevant than a document containing all the query terms in smaller numbers that is not what we define by relevant results.
+All the docIDs are sorted according to their weights, that is needed if we want to use optimization heuristic ( we chose the number 3 ) in the searching part.
+Finally, we write all the documents’ length in a separate file (document_lengths.txt). These values will be used at the query time for normalization purposes.
 
 ## FORMAT
     In this program we use these formats :
         
         - dictionary : {"token": postingListID, ..}
         
-        - posting list : {postingListID1: { docID1: -1,  docID2: -1 }, postingListID2: ... }
-
-
-        For the posting list, the value are dict data structure as it will be faster to know if a docID is in a posting list (instead of using list data structure and the "x in postingList" method that's longer)
-
+        - posting list : 
+- {postingListID1: { docID1: termFrequency,  docID2: termFrequency }, postingListID2: ... } before computing weights
+-  {postingListID1: { docID1: (termFrequency,weight),  docID2: (termFrequency,weight) }, postingListID2: ... } after computing weights
     
     The output format for a dictionary is :
         
@@ -64,6 +55,12 @@ are usually sufficient.
         ...
 
     As we use offset as posting list ID, we don't need to write it in the posting list.
+
+	The output for the documents’ length file :
+docID1 length 
+docID2 length
+…
+ 
 
 
 # search.py:

@@ -109,7 +109,7 @@ def computeWeights(postingLists, N):
     print("..computing weights : N = {}".format(N))
     for pL_Id,docs in postingLists.items():
         for docID, termFreq in docs.items():
-            weight = (1+math.log(int(termFreq), 10)) 
+            weight = (1+math.log(int(termFreq), 10))
             postingLists[pL_Id][docID] = (termFreq,weight)
 
             # Update document length
@@ -121,16 +121,15 @@ def computeWeights(postingLists, N):
     # Export the length for normalization
     with open("documents_length.txt", "w") as f:
         for docID, length in documents_length.items():
-            f.write("{} {}\n".format(docID,length))
+            f.write("{} {}\n".format(docID,math.sqrt(length)))
 
     return postingLists
     
 
 def build_index(in_dir, out_dict, out_postings,path_data):
-    """
-    build index from documents stored in the input directory,
-    then output the dictionary file and postings file
-    """
+    # Build index from documents stored in the input directory,
+    # then output the dictionary file and postings file
+    
     print('indexing...')
 
     #Init
@@ -165,7 +164,7 @@ def build_index(in_dir, out_dict, out_postings,path_data):
                 # finally  -> ["be", "u.s", "big"]
  
 
-                # == SPIMI INVERT == 
+                # == Build dictionary and postings == 
                 for token in stemmed_tokens_without_punct:
                     if token != "":
                         #Is the token in the dictionary ? 
