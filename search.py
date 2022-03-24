@@ -123,7 +123,7 @@ def search_documents(token, dictionary, postings_file):
         f.seek(dictionary[token][1])
         line = f.readline()
         line = line.strip("\n")
-        line = line.split(" ")  # For the moment we consider spaces in the posting lists
+        line = line.split(" ")  
 
         # Only consider the documents with high enough weight *Heur3*
         documents = []
