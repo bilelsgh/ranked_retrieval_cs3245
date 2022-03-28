@@ -10,11 +10,6 @@ from nltk.tokenize import word_tokenize
 from string import punctuation
 
 
-"""
-TODO :
-    - if a word is not in the dictionary 
-"""
-
 STEMMER = stem.PorterStemmer()
 DIGITS = 5
 PATH = os.listdir("nltk_data/corpora/reuters/training")
@@ -200,7 +195,6 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 ### compute scores for the query and keep track of the ordering for the queries         
                 print("Query : '{}'".format(query)) 
                 queries, token_score = process_query(query,dictionary)
-                print(queries,token_score)
 
                 
 
@@ -214,12 +208,10 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                             documents_vects[int(elt[0])]
                         except:
                             documents_vects[int(elt[0])] = [0]*len(queries)
-                    print("..update documents weights")
                     update_documentvector(documents_vects, documents, i) # we got new document(s) for a token, we need to update the vector value
 
                 print("..compute cosscore")
                 cosscores = compute_cosscore(documents_vects,token_score)
-                print("..get documents")
                 result = get_documents(cosscores)
 
                 # Write the result of the query 

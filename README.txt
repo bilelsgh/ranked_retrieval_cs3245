@@ -48,13 +48,12 @@ Finally, we write all the documents’ length in a separate file (document_lengt
 
     The output format for a posting list is :
         
-        doc_IDS1 skip_pointers1
-        
-        doc_IDS2 skip_pointers2
-        
-        ...
+        <doc_ID1><weight> <doc_ID2><weight> <doc_ID5><weight>
+       <doc_ID7><weight> <doc_ID1><weight>  
+...
 
-    As we use offset as posting list ID, we don't need to write it in the posting list.
+    As we use offset as posting list ID, we don't need to write it in the posting list. Each group <doc_ID1><weight> has a length of 10digits : 5 for the docID and 5 for the length. Then, we can directly access to the different value during the search part and don’t have to perform several split operations. As the greater docID in the reuter dataset is 14818 and 3 decimals is accurate enough for a document weight, it doesn’t affect the efficiency of the search.
+
 
 	The output for the documents’ length file :
 docID1 length 
@@ -75,12 +74,13 @@ The program reads queries from the query file and find the K most relevant docum
 
 Since we are assuming that dictionary is compact and sufficiently small to be stored in memory, we first retrieve the dictionary(retrieve_dict) from dictionary.txt and store the information in memory. Since dictionary.txt has the information of the offset to the term's postings list, this will allow us to locate the posting list easily instead of scanning through the file to find the corresponding term's posting list in the postings.txt thus speeding up the retrieval of the documentIDs.
 
-For every line of query, we will first preprocess the query terms(process_query) in the same way we generate the tokens for our dictionary. After we retrieve the tokens we will then process the wt.idf weights of the query and utilise heuristic 3 which removes query terms with low wt.idf score(under a certain threshold). Finally we return 2 arrays, the first array contains the query term order and the second array consists of the score for the corresponding query term.
+For every line of query, we will first preprocess the query terms(process_query) in the same way we generate the tokens for our dictionary. After we retrieve the tokens we will then process the wt.idf weights of the query and remove query terms with low wt.idf score(under a certain threshold). Finally we return 2 arrays, the first array contains the query term order and the second array consists of the score for the corresponding query term.
 
 For each term in the queries array, we will use the token and search for documents that consists the document and get their corresponding docID and wt that has been precalculated in the indexing phase. The weight will then be added into the dictionary that maintains the vector score for the different docIDs. Once all the terms have been processed and converted a vector. We then call compute_cosscore to get the dot product between the query score and the doc score before normalizing all the score with their corresponding document length.
 
 Lastly, we call get_documents to sort the documents in decreasing order of relevance before choosing the K most relevant documents that should be output into the output file.
 
+We’ve also implemented the optimization heuristic 3 (seen in lecture) to improve the document searching and the query processing, to use it you just have to set the Boolean HEURISTIC3 to True (at the top of search.py). However, our tests showed that it leads to worse results, and so we don’t use it (HEURISTIC3=False by default).
 
 == Files included with this submission ==
 
