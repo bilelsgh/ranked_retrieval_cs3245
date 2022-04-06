@@ -59,7 +59,7 @@ def printDico(dico,_iter):
             if idx > 15210:
                 if idx > iter:
                     break
-                print("{} => {}\n=====\n".format(key,val))
+                #print("{} => {}\n=====\n".format(key,val))
             idx +=1
 
 
@@ -71,12 +71,12 @@ def writeDict(_dict,postL):
     # :param postL: posting list {postingListID1: {docID1: (termFrequency, weight), docID2: ...} ...}
     # :return: void
     offset = 0
-    print(_dict)
+    #print(_dict)
     with open("dictionary.txt", "w") as f:
         for key,v in _dict.items():
             for k,val in v.items():
                 sorted_docIDS = [int(elt) for elt in list(postL[str(val)].keys())]
-                print(sorted_docIDS)
+                #print(sorted_docIDS)
                 sorted_docIDS.sort()
                 sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], (str(postL[str(val)][(elt)][1]))[:5] ) for elt in sorted_docIDS]
                 all_docIDS = " ".join( sorted_docIDS_5dig )
@@ -141,9 +141,9 @@ def build_index(in_dir, out_dict, out_postings,path_data):
     print('indexing...')
 
     columns_to_index = {"title","content"}
-    data = pd.read_csv(path_data).head(1) # Get the data in a dataframe
-    data["content"][0] = "salut je suis bilel et je suis a singapour!"
-    data["title"][0] = "bilel a singapour"
+    data = pd.read_csv(path_data).head(2) # Get the data in a dataframe
+    # data["content"][0] = "salut je suis bilel et je suis a singapour!"
+    # data["title"][0] = "bilel a singapour"
 
     #Init
     dictionary = {} # Format : {"token": {title : postingListID, content: postingListID} ..}
@@ -200,7 +200,7 @@ def build_index(in_dir, out_dict, out_postings,path_data):
     # Write the current dictionary
     if len(dictionary) != 0:
         dictionary = sortDict(dictionary)
-        print(dictionary)
+        #print(dictionary)
         postingList = sortPosting(postingList,dictionary)
         postingList = computeWeights(postingList, len( data ) )
 
