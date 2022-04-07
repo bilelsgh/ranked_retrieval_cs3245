@@ -17,11 +17,12 @@ import math
 
 
 """
-BACKUP VERSION, DON'T DELETE
+HOMEWORK 4 : structured dict
 """
 
 
 STEMMER = stem.PorterStemmer()
+BIGRAMS = False 
 
 
 # === Useful functions ===
@@ -141,10 +142,8 @@ def build_index(in_dir, out_dict, out_postings,path_data):
     
     print('indexing...')
 
-    columns_to_index = {"title","content"}
-    data = pd.read_csv(path_data).head(1) # Get the data in a dataframe
-    data["content"][0] = "salut je suis bilel et je suis a singapour!"
-    data["title"][0] = "bilel a singapour"
+    columns_to_index = {"title","content","date_posted"} # Columns : "document_id","title","content","date_posted","court"
+    data = pd.read_csv(path_data).head(3) # Get the data in a dataframe
 
     #Init
     dictionary = {} # Format : {"token": {title : postingListID, content: postingListID} ..}
@@ -159,29 +158,43 @@ def build_index(in_dir, out_dict, out_postings,path_data):
         index +=1
 
         for col in columns_to_index :
+            date_col = False
             line = row[col]
 
             # == PREPROCESS STUFF ==
             stemmed_tokens_without_punct = []
 
-            #Tokenization
-            for word in word_tokenize(line) : # "Is U.S. big?" --> ["Is", "U.S.", "big?"] 
-                
-                #Stemm
-                stemmed_token = (STEMMER.stem(word)) # are -> be
-                
-                #Remove punctuations
-                stemmed_tokens_without_punct += stemmed_token.strip(punctuation).split(" ")
-                
-            
-            # finally  -> ["be", "u.s", "big"]
-            bigrams_ = list(bigrams(stemmed_tokens_without_punct)) #get the bigrams
+            if col == "date_posted": # dates are not processed as the other columns
+                date_col = True
+                months_correspondence = {"01":"Jan", "02":"Feb", "03":"Mar", "04":"Apr", "05":"May", "06":"Jun", "07":"Jul", "08":"Aug", "09":"Sep", "10":"Oct", "11":"Nov", "12":"Dec"}
+                yy,mm,dd = line.split()[0].split("-")
 
+                # Change the date format (which one ?)
+                # date = "{} {} {}".format(int(dd),months_correspondence[mm],yy) # 21 May 2020
+                date = "{}-{}-{}".format(int(dd),int(mm),yy) # 21-5-2020
+                # date = "{}-{}-{}".format(int(mm),int(dd),yy) # 5-21-2020
+                # date = "{}-{}-{}".format(yy,int(mm),int(dd)) # 2020-5-21
+
+                stemmed_tokens_without_punct = [ date ]
+            else:
+                #Tokenization
+                for word in word_tokenize(line) : # "Is U.S. big?" --> ["Is", "U.S.", "big?"] 
+                    #Stemm
+                    stemmed_token = (STEMMER.stem(word)) # are -> be
+                    
+                    #Remove punctuations
+                    stemmed_tokens_without_punct += stemmed_token.strip(punctuation).split(" ")
+                    
+                
+                # finally  -> ["be", "u.s", "big"]
+
+                stemmed_tokens_without_punct = list(bigrams(stemmed_tokens_without_punct)) if BIGRAMS else stemmed_tokens_without_punct #get the bigrams if BIGRAMS
+           
             # == Build dictionary and postings ==
             #  
-            # for bigram in bigrams_: # Uncomment these two lines to use bigrams
-            #     token = " ".join(bigram)
-            for token in stemmed_tokens_without_punct :
+            for _token in stemmed_tokens_without_punct :
+                token = _token if (date_col or not BIGRAMS) else " ".join(_token) # uncomment if using bigrams
+
                 if token != "":
                     #Is the token in the dictionary ? 
                     try:
