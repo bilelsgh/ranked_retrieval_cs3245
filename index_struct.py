@@ -5,6 +5,7 @@ from pydoc import doc
 import re
 import nltk
 import os
+from nltk.util import bigrams
 import sys
 import getopt
 import math
@@ -141,9 +142,9 @@ def build_index(in_dir, out_dict, out_postings,path_data):
     print('indexing...')
 
     columns_to_index = {"title","content"}
-    data = pd.read_csv(path_data).head(2) # Get the data in a dataframe
-    # data["content"][0] = "salut je suis bilel et je suis a singapour!"
-    # data["title"][0] = "bilel a singapour"
+    data = pd.read_csv(path_data).head(1) # Get the data in a dataframe
+    data["content"][0] = "salut je suis bilel et je suis a singapour!"
+    data["title"][0] = "bilel a singapour"
 
     #Init
     dictionary = {} # Format : {"token": {title : postingListID, content: postingListID} ..}
@@ -174,8 +175,11 @@ def build_index(in_dir, out_dict, out_postings,path_data):
                 
             
             # finally  -> ["be", "u.s", "big"]
+            bigrams_ = list(bigrams(stemmed_tokens_without_punct)) #get the bigrams
+
             # == Build dictionary and postings == 
-            for token in stemmed_tokens_without_punct:
+            for bigram in bigrams_:
+                token = " ".join(bigram)
                 if token != "":
                     #Is the token in the dictionary ? 
                     try:
