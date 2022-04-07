@@ -175,9 +175,12 @@ def build_index(in_dir, out_dict, out_postings,path_data):
 
             bigrams_ = list(bigrams(stemmed_tokens_without_punct)) #get the bigrams
 
-            # == Build dictionary and postings == 
-            for bigram in bigrams_:
-                token = " ".join(bigram)
+
+            # == Build dictionary and postings ==
+             
+            # for bigram in bigrams_: # Uncomment these two lines to use bigrams
+            #     token = " ".join(bigram)
+            for token in stemmed_tokens_without_punct :
 
                 if token != "":
                     #Is the token in the dictionary ? 
