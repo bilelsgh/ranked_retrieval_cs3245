@@ -15,9 +15,12 @@ TODO :
     - if a word is not in the dictionary 
 """
 
+ROCCHIO_ALPHA = 1.0
+ROCCHIO_BETA = 0.75
 STEMMER = stem.PorterStemmer()
 DIGITS = 5
-PATH = os.listdir("nltk_data/corpora/reuters/training")
+# todo change the hardcode
+PATH = os.listdir("/Users/limsiying/nltk_data/corpora/reuters/training")
 N = len(PATH) # Size of the collection
 ### return max 10 documents
 K = 10
@@ -101,7 +104,6 @@ def get_documents(cosscores):
     ### Get only the best K number of results
     if len(cosscores) > K:
         cosscores = cosscores[:K]
-    print(cosscores)
 
     ### return only the docId
     return [str(docId[0]) for docId in cosscores]
@@ -128,8 +130,14 @@ def search_documents(token, dictionary, postings_file):
         # Only consider the documents with high enough weight *Heur3*
         documents = []
         for elt in line:
-            docID_weight = ( int(elt[:DIGITS]),float(elt[DIGITS:]) ) # (docID,tf.idf)
-            
+            if len(elt) <= 5:
+                continue
+
+            # todo clarify what is DIGITS
+            # todo clarify what is elt
+            docID_weight = ( float(elt[:DIGITS]),float(elt[DIGITS:]) ) # (docID,tf.idf)
+
+
             # Optimization heuristic : we only return document with a high enough weight
             if HEURISTIC3 :
                 if ( docID_weight[1] ) > WEIGHT_DOCUMENT_THRESHOLD :
@@ -140,6 +148,7 @@ def search_documents(token, dictionary, postings_file):
                 documents.append(docID_weight)
         
     return documents
+
 
 def process_query(query, dictionary):
     # Get the query tokens and their scores from a free text query
@@ -185,46 +194,71 @@ def process_query(query, dictionary):
     return final_query, token_score
         
 
+def get_rocchio_score(queries, token_score, cosscores, c=7):
+    alpha = 1
+    beta = 0.75
+    gamma = -0.15
+
+    # for pseudo relevance feedback, take top 7 documents as relevant
+    sum_relevant_doc_scores = sum([t[1] for t in cosscores[:c]])
+    normalized_relevant_doc_scores = sum_relevant_doc_scores/c
+    # for pseudo relevance feedback, take bottom 7 documents as irrelevant
+    sum_irrelevant_doc_scores = sum([t[1] for t in cosscores[-c:]])
+    normalized_irrelevant_doc_scores = sum_irrelevant_doc_scores/c
+
+    # todo is this correct??
+    new_token_score = {
+        queries[idx]: alpha*token_score[idx] + beta*normalized_relevant_doc_scores + gamma*normalized_irrelevant_doc_scores
+        for idx in range(len(queries))
+    }
+
+    return new_token_score
+
+
 def usage():
     print("usage: " + sys.argv[0] + " -d dictionary-file -p postings-file -q file-of-queries -o output-file-of-results")
 
 def run_search(dict_file, postings_file, queries_file, results_file):
     dictionary = retrieve_dict(dict_file) # Get the dictionary
 
-    # Get the query 
-    with open(queries_file, "r") as file :              
-        with open(results_file, "w") as result_file: # for every query we need to write
-            while query := file.readline():
-                documents_vects = {} # { docID: document_vector ..}
-                
-                ### compute scores for the query and keep track of the ordering for the queries         
-                print("Query : '{}'".format(query)) 
-                queries, token_score = process_query(query,dictionary)
-                print(queries,token_score)
+    # Get the query
+    with open(queries_file, "r") as file, open(results_file, "w") as result_file: # for every query we need to write
+        while query := file.readline():
+            documents_vects = {} # { docID: document_vector ..}
 
-                
+            ### compute scores for the query and keep track of the ordering for the queries
+            print("Query : '{}'".format(query))
+            queries, token_score = process_query(query,dictionary)
+            print(queries,token_score)
 
-                for i,query in enumerate(queries):
-                    print("..search documents")
-                    documents = search_documents(query,dictionary,postings_file)
+            for i, query in enumerate(queries):
+                print("..search documents")
+                documents = search_documents(query,dictionary,postings_file)
 
-                    # Create a vector for the documents if they don't already exist
-                    for elt in documents:
-                        try:
-                            documents_vects[int(elt[0])]
-                        except:
-                            documents_vects[int(elt[0])] = [0]*len(queries)
-                    print("..update documents weights")
-                    update_documentvector(documents_vects, documents, i) # we got new document(s) for a token, we need to update the vector value
+                # Create a vector for the documents if they don't already exist
+                for elt in documents:
+                    try:
+                        documents_vects[int(elt[0])]
+                    except:
+                        documents_vects[int(elt[0])] = [0]*len(queries)
+                print("..update documents weights")
+                update_documentvector(documents_vects, documents, i) # we got new document(s) for a token, we need to update the vector value
 
-                print("..compute cosscore")
-                cosscores = compute_cosscore(documents_vects,token_score)
-                print("..get documents")
-                result = get_documents(cosscores)
+            print("..compute cosscore")
+            cosscores = compute_cosscore(documents_vects,token_score)
+            print("..get documents")
+            # result = get_documents(cosscores)
 
-                # Write the result of the query 
-                result_file.write(' '.join(result))
-                result_file.write("\n")
+            # perform relevance feedback
+            cosscores.sort(key=lambda i: i[1], reverse=True)  ### sort using the cosscore
+            new_token_score = get_rocchio_score(queries, token_score, cosscores)
+
+            adjusted_cosscores = compute_cosscore(documents_vects,new_token_score)
+            result = get_documents(adjusted_cosscores)
+
+            # Write the result of the query
+            result_file.write(' '.join(result))
+            result_file.write("\n")
 
 dictionary_file = postings_file = file_of_queries = output_file_of_results = None
 
