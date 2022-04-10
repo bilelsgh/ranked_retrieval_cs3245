@@ -15,8 +15,6 @@ TODO :
     - if a word is not in the dictionary 
 """
 
-ROCCHIO_ALPHA = 1.0
-ROCCHIO_BETA = 0.75
 STEMMER = stem.PorterStemmer()
 DIGITS = 5
 # todo change the hardcode
