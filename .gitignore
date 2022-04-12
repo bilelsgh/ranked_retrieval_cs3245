@@ -1,2 +1,5 @@
 /nltk_data
 dataset.csv
+dictionary.txt
+postings.txt
+documents_length.txt
