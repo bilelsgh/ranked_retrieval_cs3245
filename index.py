@@ -10,7 +10,7 @@ import getopt
 import math
 import json
 from nltk.tokenize import word_tokenize
-from nltk.util import bigrams
+from nltk.util import bigrams, trigrams
 from nltk import stem
 from string import punctuation
 import math
@@ -18,11 +18,15 @@ import math
 
 """
 HOMEWORK 4 : normal dict
+Index without number ?
+special character error : UnicodeEncodeError: 'charmap' codec can't encode character '\u2033' in position 6: character maps to <undefined>
 """
 
 
 STEMMER = stem.PorterStemmer()
-BIGRAMS = False
+BIGRAMS = True
+UNIGRAMS = True
+TRIGRAMS = True
 
 
 # === Useful functions ===
@@ -70,7 +74,7 @@ def writeDict(_dict,postL):
     # print(_dict)
     # print(postL)
     offset = 0
-    with open("dictionary.txt", "w") as f:
+    with open("dictionary.txt", "w", encoding="utf-8") as f:
         for key,val in _dict.items():
             sorted_docIDS = [int(elt) for elt in list(postL[str(val)].keys())]
             sorted_docIDS.sort()
@@ -83,7 +87,7 @@ def writeDict(_dict,postL):
             f.write(new_line)
             offset += len(post_line)+1
 
-def writePosting(post):
+def writePosting(post,encoding="utf-8"):
     # Write a posting list onto harddisk during the "build index" part.
     # :param idx: index in the name of the file
     # :param post: posting list {postingListID1: {docID1: (termFrequency, weight), docID2: ...} ...}
@@ -140,17 +144,18 @@ def build_index(in_dir, out_dict, out_postings,path_data):
     print('indexing...')
 
     columns_to_index = {"title","content","date_posted"} # Columns : "document_id","title","content","date_posted","court"
-    data = pd.read_csv(path_data).head(3) # Get the data in a dataframe
-    print(data)
+    data = pd.read_csv(path_data) # Get the data in a dataframe
+    print("Data length : {}".format(len(data)))
 
     #Init
     dictionary = {} # Format : {"token": {title : postingListID, content: postingListID} ..}
     postingList = {} # Format : {postingListID1: { docID1: termFrequency,  docID2: termFrequency }, postingListID2: ... } 
     index = -1
+    months_correspondence = {"01":"Jan", "02":"Feb", "03":"Mar", "04":"Apr", "05":"May", "06":"Jun", "07":"Jul", "08":"Aug", "09":"Sep", "10":"Oct", "11":"Nov", "12":"Dec"}
     
     
     # We are going through all the documents
-    for _,row in data.head().iterrows():
+    for _,row in data.iterrows():
         docID = row["document_id"]
         index +=1
 
@@ -159,11 +164,11 @@ def build_index(in_dir, out_dict, out_postings,path_data):
             line = row[col]
 
             # == PREPROCESS STUFF ==
+            final_tokens = {}
             stemmed_tokens_without_punct = []
 
             if col == "date_posted": # dates are not processed as the other columns
                 date_col = True
-                months_correspondence = {"01":"Jan", "02":"Feb", "03":"Mar", "04":"Apr", "05":"May", "06":"Jun", "07":"Jul", "08":"Aug", "09":"Sep", "10":"Oct", "11":"Nov", "12":"Dec"}
                 yy,mm,dd = line.split()[0].split("-")
 
                 # Change the date format (which one ?)
@@ -172,42 +177,61 @@ def build_index(in_dir, out_dict, out_postings,path_data):
                 # date = "{}-{}-{}".format(int(mm),int(dd),yy) # 5-21-2020
                 # date = "{}-{}-{}".format(yy,int(mm),int(dd)) # 2020-5-21
 
-                stemmed_tokens_without_punct = [ date ]
+                final_tokens["unigrams"] = [ date ]
             else:
                 #Tokenization
                 for word in word_tokenize(line) : # "Is U.S. big?" --> ["Is", "U.S.", "big?"] 
-                    #Stemm
-                    stemmed_token = (STEMMER.stem(word)) # are -> be
-                    
-                    #Remove punctuations
-                    stemmed_tokens_without_punct += stemmed_token.strip(punctuation).split(" ")
-                    
+
+                    # We only index number that are in the title
+                    if col == "title":
+                        #Stemm
+                        stemmed_token = (STEMMER.stem(word)) # are -> be
+                        
+                        #Remove punctuations
+                        stemmed_tokens_without_punct += stemmed_token.strip(punctuation).split(" ")
+                    else:
+                        # Numbers are not indexed
+                        try:
+                            float(word)
+                        except:
+                            #Stemm
+                            stemmed_token = (STEMMER.stem(word)) # are -> be
+                            
+                            #Remove punctuations
+                            stemmed_tokens_without_punct += stemmed_token.strip(punctuation).split(" ")
+                        
                 
                 # finally  -> ["be", "u.s", "big"]
 
-                stemmed_tokens_without_punct = list(bigrams(stemmed_tokens_without_punct)) if BIGRAMS else stemmed_tokens_without_punct #get the bigrams if BIGRAMS
 
+                if UNIGRAMS :
+                    final_tokens["unigrams"] = stemmed_tokens_without_punct #get the bigrams if BIGRAMS
+                if BIGRAMS:
+                    final_tokens["bigrams"] = list(bigrams(stemmed_tokens_without_punct))
+                if TRIGRAMS:
+                    final_tokens["trigrams"] = list(trigrams(stemmed_tokens_without_punct))
 
             # == Build dictionary and postings ==
              
-            for _token in stemmed_tokens_without_punct :
-                token = _token if (date_col or not BIGRAMS) else " ".join(_token) # uncomment if using bigrams
-                
+            for key, tokens in final_tokens.items() :
+                for _token in tokens :
+                    token = _token if (date_col or key == "unigrams") else " ".join(_token) # uncomment if using bigrams
+                    
 
-                if token != "":
-                    #Is the token in the dictionary ? 
-                    try:
-                        postingListID = dictionary[token]
-                        
-                        #We add the current docID to the posting list if it is not in yet
+                    if token != "":
+                        #Is the token in the dictionary ? 
                         try:
-                            postingList[postingListID][docID] += 1
+                            postingListID = dictionary[token]
+                            
+                            #We add the current docID to the posting list if it is not in yet
+                            try:
+                                postingList[postingListID][docID] += 1
+                            except:
+                                postingList[postingListID][docID] = 1
                         except:
-                            postingList[postingListID][docID] = 1
-                    except:
-                        dictionary[token] = list(dictionary.values())[-1]+1 if len(dictionary.values()) != 0 else 1
-                        postingList[dictionary[token]] = {}
-                        postingList[dictionary[token]][docID] = 1
+                            dictionary[token] = list(dictionary.values())[-1]+1 if len(dictionary.values()) != 0 else 1
+                            postingList[dictionary[token]] = {}
+                            postingList[dictionary[token]][docID] = 1
 
     # Write the current dictionary
     if len(dictionary) != 0:

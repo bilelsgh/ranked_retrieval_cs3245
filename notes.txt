@@ -1,0 +1,5 @@
+## Delete this file before submission
+
+# index.py
+    -> (unigrams): 27min | Dictionary ~8.5Mo, Postings ~166Mo [title, content, date | without numbers]
+    -> (uni+bi+trigrams): +10h | Dictionary ~XMo, Postings ~XMo [title, content, date, court | with numbers only for title]
