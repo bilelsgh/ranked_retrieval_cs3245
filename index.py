@@ -24,9 +24,9 @@ special character error : UnicodeEncodeError: 'charmap' codec can't encode chara
 
 
 STEMMER = stem.PorterStemmer()
-BIGRAMS = True
+BIGRAMS = False
 UNIGRAMS = True
-TRIGRAMS = True
+TRIGRAMS = False
 
 
 # === Useful functions ===
@@ -79,7 +79,7 @@ def writeDict(_dict,postL):
             sorted_docIDS = [int(elt) for elt in list(postL[str(val)].keys())]
             sorted_docIDS.sort()
 #            sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], (str(postL[str(val)][(elt)][1]))[:5] ) for elt in sorted_docIDS]
-            sorted_docIDS_5dig = ["{} {}".format( ("0000"+str(elt))[:], (str(postL[str(val)][(elt)][1]))[:5] ) for elt in sorted_docIDS] # temporary
+            sorted_docIDS_5dig = ["{}_{}".format( ("0000"+str(elt))[:], (str(postL[str(val)][(elt)][1]))[:5] ) for elt in sorted_docIDS] # temporary
             all_docIDS = " ".join( sorted_docIDS_5dig )
 
             post_line = "{}\n".format(all_docIDS)
@@ -99,7 +99,7 @@ def writePosting(post,encoding="utf-8"):
             sorted_docIDS = [int(elt[0]) for elt in sorted_posting]
             #sorted_docIDS = [int(elt) for elt in list(docIDS.keys())]
 #            sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], (str(docIDS[(elt)][1]))[:5] ) for elt in sorted_docIDS] #with term weights
-            sorted_docIDS_5dig = ["{} {}".format( ("0000"+str(elt))[-5:], (str(docIDS[(elt)][1]))[:5] ) for elt in sorted_docIDS] # temporary
+            sorted_docIDS_5dig = ["{}_{}".format( ("0000"+str(elt))[:], (str(docIDS[(elt)][1]))[:5] ) for elt in sorted_docIDS] # temporary
             all_docIDS = " ".join( sorted_docIDS_5dig )
            
             new_line = "{}\n".format(all_docIDS)
@@ -143,8 +143,8 @@ def build_index(in_dir, out_dict, out_postings,path_data):
     
     print('indexing...')
 
-    columns_to_index = {"title","content","date_posted"} # Columns : "document_id","title","content","date_posted","court"
-    data = pd.read_csv(path_data) # Get the data in a dataframe
+    columns_to_index = {"content"} # Columns : "document_id","title","content","date_posted","court"
+    data = pd.read_csv(path_data).head() # Get the data in a dataframe
     print("Data length : {}".format(len(data)))
 
     #Init
@@ -166,7 +166,6 @@ def build_index(in_dir, out_dict, out_postings,path_data):
             # == PREPROCESS STUFF ==
             final_tokens = {}
             stemmed_tokens_without_punct = []
-
             if col == "date_posted": # dates are not processed as the other columns
                 date_col = True
                 yy,mm,dd = line.split()[0].split("-")
@@ -203,7 +202,6 @@ def build_index(in_dir, out_dict, out_postings,path_data):
                 
                 # finally  -> ["be", "u.s", "big"]
 
-
                 if UNIGRAMS :
                     final_tokens["unigrams"] = stemmed_tokens_without_punct #get the bigrams if BIGRAMS
                 if BIGRAMS:
@@ -212,7 +210,6 @@ def build_index(in_dir, out_dict, out_postings,path_data):
                     final_tokens["trigrams"] = list(trigrams(stemmed_tokens_without_punct))
 
             # == Build dictionary and postings ==
-             
             for key, tokens in final_tokens.items() :
                 for _token in tokens :
                     token = _token if (date_col or key == "unigrams") else " ".join(_token) # uncomment if using bigrams
@@ -235,6 +232,7 @@ def build_index(in_dir, out_dict, out_postings,path_data):
 
     # Write the current dictionary
     if len(dictionary) != 0:
+        print("sort dico")
         dictionary = sortDict(dictionary)
         postingList = sortPosting(postingList,dictionary)
         postingList = computeWeights(postingList, len( data ) )

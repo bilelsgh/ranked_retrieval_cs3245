@@ -12,8 +12,9 @@ from string import punctuation
 
 STEMMER = stem.PorterStemmer()
 DIGITS = 5
-PATH = os.listdir("nltk_data/corpora/reuters/training")
-N = len(PATH) # Size of the collection
+N = sum(1 for line in open('documents_length.txt'))
+print("Size of the collection : {}".format(N))
+# Size of the collection
 ### return max 10 documents
 K = 10
 WEIGHT_QUERY_THRESHOLD = 0.35 # Used to select the most important query terms
@@ -110,7 +111,6 @@ def search_documents(token, dictionary, postings_file):
     # :return: Set of documents that contain the token, format = [(docID,tf.idf) , ...]
 
     documents = [] 
-
     if token not in dictionary: ### if key does not exist
         return []
     
@@ -123,7 +123,7 @@ def search_documents(token, dictionary, postings_file):
         # Only consider the documents with high enough weight *Heur3*
         documents = []
         for elt in line:
-            docID_weight = ( int(elt[:DIGITS]),float(elt[DIGITS:]) ) # (docID,tf.idf)
+            docID_weight = ( int(elt.split("_")[0]),float(elt.split("_")[1]) ) # (docID,tf.idf)
             
             # Optimization heuristic : we only return document with a high enough weight
             if HEURISTIC3 :
@@ -135,6 +135,51 @@ def search_documents(token, dictionary, postings_file):
                 documents.append(docID_weight)
         
     return documents
+
+
+def eval_AND(tokens,dictionary,posting_file):
+    # Get documents that contains every token in tokens
+    # :param tokens: Array of unigrams -> ["bank","of","newyork"]
+    # :param dictionary: Dictionary of the collection, format : {term1: (termFrequency, offset)...}
+    # :param postings_file: (str) Path of the postings
+    # :return res: documents that match the AND query
+
+
+    documents = [] # contains the list of documents that contains each token -> [ [(doc1 that contains tokens[0], score).. ], [(doc1 that contains tokens[1], score)..  ], ... ]
+    res = [] # documents that contain all tokens
+
+    # Get the documents lists for each token
+    for token in tokens :
+        print(token)
+        documents.append( search_documents(token,dictionary,posting_file) )
+
+    print(documents)
+    pointers = [0]*len(documents)
+
+    while [pointers[i] < len(documents[i]) for i in range(len(documents))] == [True]*len(documents):
+        # A match exists if the three terms appear in the same document
+        if len(documents) == 2 :
+            match = documents[0][pointers[0]][0] == documents[1][pointers[1]][0]
+        else:
+            match = documents[0][pointers[0]][0] == documents[1][pointers[1]][0] == documents[2][pointers[2]][0]
+
+
+        if match :
+            res.append( documents[0][pointers[0]] )
+
+        # Increment the pointer with the smallest docID
+        min_ = min( documents[0][pointers[0]][0],documents[1][pointers[1]][0] ) # The smaller current docID
+        min_ = min(min_,documents[2][pointers[2]][0]) if len(documents) == 3 else min_
+        
+        if documents[0][pointers[0]][0] == min_ :
+            pointers[0] += 1
+        elif documents[1][pointers[1]][0] == min_ :
+            pointers[1] += 1
+        else:
+            pointers[2] += 1
+
+    return res
+        
 
 def process_query(query, dictionary):
     # Get the query tokens and their scores from a free text query
@@ -242,4 +287,6 @@ if dictionary_file == None or postings_file == None or file_of_queries == None o
     usage()
     sys.exit(2)
 
-run_search(dictionary_file, postings_file, file_of_queries, file_of_output)
+#run_search(dictionary_file, postings_file, file_of_queries, file_of_output)
+dictionary = retrieve_dict(dictionary_file)
+print(eval_AND(["real","madrid","footbal"],dictionary,postings_file))

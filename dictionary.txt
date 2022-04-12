@@ -1,0 +1,9 @@
+a 1 0
+best 1 16
+club 2 32
+footbal 2 63
+is 1 94
+madrid 2 110
+player 1 141
+real 3 157
+the 1 203
