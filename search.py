@@ -8,6 +8,7 @@ from math import sqrt, log, pow
 from nltk import stem
 from nltk.tokenize import word_tokenize
 from string import punctuation
+from collections import Counter
 
 
 STEMMER = stem.PorterStemmer()
@@ -181,6 +182,22 @@ def eval_AND(tokens,dictionary,posting_file):
     return res
         
 
+def get_tokens(s):
+    tokens = s.split(' ')
+    
+    # case fold tokens
+    tokens = map(lambda token: token.casefold(), tokens)
+
+    # perform stemming on words
+    tokens = map(lambda token: STEMMER.stem(token), tokens)
+
+    # remove dispensable punctuations other than $@% which could be used for money, email, shares etc
+    punctuations = set(punctuation) - set("$@%")
+    tokens = filter(lambda token: token not in punctuations, tokens)
+
+    return Counter(tokens)
+
+
 def process_query(query, dictionary):
     # Get the query tokens and their scores from a free text query
     # :param query: (str) A free text query
@@ -189,28 +206,19 @@ def process_query(query, dictionary):
     # :return token_score: Scores of each of the query term returned
 
     tokens = {}
-    queries = [] 
-    for word in word_tokenize(query):
-        ### pre-process tokens similar to index
-        token = (STEMMER.stem(word)) 
-        token = token.strip(punctuation).split(" ")
+    queries = []
 
-        ### maintain tf for the token
-        if token[0] in tokens:
-            tokens[token[0]] += 1
-        else:
-            tokens[token[0]] = 1
-            queries.append(token[0])  ### get all distinct tokens
-
+    tokens = get_tokens(query)
+    
     ### compute the tf-idf
     token_wtidf = []
-    for i in range(len(queries)):
-        token = queries[i]
-
+    
+    for token in queries:
         tf_idf = (1 + log(tokens[token], 10)) * log(N/dictionary[token][0], 10) ### TODO: Check the data structure for dictionary and change accordingly -> ok with the data structure
         token_wtidf.append(tf_idf)
-    
-    
+   
+    print(token_wtidf)
+
     ### get only the important terms of the query and get rid of those which don't give much information (1)
     queries_and_score = [(queries[i],tf) for i,tf in enumerate(token_wtidf) if tf > WEIGHT_QUERY_THRESHOLD]
     
@@ -223,45 +231,31 @@ def process_query(query, dictionary):
     final_query = [elt[0] for elt in queries_and_score]
 
     return final_query, token_score
-        
+
+
+def get_query_and_relevant_docs(src):
+    with open(src, 'r') as f:
+        data = [l.rstrip() for l in f.readlines()]
+
+    query = data[0]
+    relevant_docs = data[1:] if len(data) > 1 else None
+    relevant_docs = list(map(int, relevant_docs))
+
+    return query, relevant_docs
+
 
 def usage():
     print("usage: " + sys.argv[0] + " -d dictionary-file -p postings-file -q file-of-queries -o output-file-of-results")
+
 
 def run_search(dict_file, postings_file, queries_file, results_file):
     dictionary = retrieve_dict(dict_file) # Get the dictionary
 
     # Get the query 
-    with open(queries_file, "r") as file :              
-        with open(results_file, "w") as result_file: # for every query we need to write
-            while query := file.readline():
-                documents_vects = {} # { docID: document_vector ..}
-                
-                ### compute scores for the query and keep track of the ordering for the queries         
-                print("Query : '{}'".format(query)) 
-                queries, token_score = process_query(query,dictionary)
+    query, relevant_docs = get_query_and_relevant_docs(queries_file)
 
-                
-
-                for i,query in enumerate(queries):
-                    print("..search documents")
-                    documents = search_documents(query,dictionary,postings_file)
-
-                    # Create a vector for the documents if they don't already exist
-                    for elt in documents:
-                        try:
-                            documents_vects[int(elt[0])]
-                        except:
-                            documents_vects[int(elt[0])] = [0]*len(queries)
-                    update_documentvector(documents_vects, documents, i) # we got new document(s) for a token, we need to update the vector value
-
-                print("..compute cosscore")
-                cosscores = compute_cosscore(documents_vects,token_score)
-                result = get_documents(cosscores)
-
-                # Write the result of the query 
-                result_file.write(' '.join(result))
-                result_file.write("\n")
+    queries, token_score = process_query(query, dictionary)
+    print(queries, token_score)
 
 dictionary_file = postings_file = file_of_queries = output_file_of_results = None
 
@@ -287,6 +281,4 @@ if dictionary_file == None or postings_file == None or file_of_queries == None o
     usage()
     sys.exit(2)
 
-#run_search(dictionary_file, postings_file, file_of_queries, file_of_output)
-dictionary = retrieve_dict(dictionary_file)
-print(eval_AND(["real","madrid","footbal"],dictionary,postings_file))
+run_search(dictionary_file, postings_file, file_of_queries, file_of_output)
