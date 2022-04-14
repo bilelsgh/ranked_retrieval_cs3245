@@ -133,6 +133,30 @@ class Preprocessor:
         QueryList = [token.strip("\"' ") for token in self.phrases_regex.findall(query)]
         return [query for query in QueryList if query != BOOLEAN_AND]
         
+    def SplitTriword(self, queryDict):
+        newQueryData = list()
+        for words in queryDict['data']:
+            splitWords = words.split()
+            if len(splitWords) == 3:
+                newQueryData.append(splitWords[0] + ' ' + splitWords[1])
+                newQueryData.append(splitWords[1] + ' ' + splitWords[2])
+            else:
+                newQueryData.append(words)
+        queryDict['data'] = newQueryData
+        return queryDict
+
+    def SplitBiword(self, queryDict):
+        newQueryData = list()
+        for words in queryDict['data']:
+            splitWords = words.split()
+            if len(splitWords) > 1:
+                for splitWord in splitWords:
+                    newQueryData.append(splitWord)
+            else:
+                newQueryData.append(words)
+        queryDict['data'] = newQueryData
+        return queryDict
+
     def is_boolean_query(self, query: str) -> bool:
         """
         Check if a query is a boolean query
@@ -199,14 +223,18 @@ def test():
     #         corpus = ' '.join([doc.get(TITLE), doc.get(CONTENT), doc.get(COURT)])
     #         corpus_tokens = preprocessor.tokenize(corpus)
     
-    for i in range(3):
-        # query = getQuery(queryFile)
-        query = input()
-        print('query:', query)
-        # query = getQuery(queryFile)
-        print(preprocessor.parse_query(query))
-        # print('BooleanQuery', preprocessor.QueryListToBooleanQuery(query))
-        # print('QueryListToFreeText', preprocessor.QueryListToFreeText(query))
-        print()
+    query = getQuery(queryFile)
+    # query = input()
+    print('query:', query)
+    # query = getQuery(queryFile)
+    queryDict = preprocessor.parse_query(query)
+    print(queryDict)
+    queryDict1 = preprocessor.SplitTriword(queryDict)
+    print(queryDict1)
+    # queryDict2 = preprocessor.SplitBiword(queryDict)
+    # print(queryDict2)
+    # print('BooleanQuery', preprocessor.QueryListToBooleanQuery(query))
+    # print('QueryListToFreeText', preprocessor.QueryListToFreeText(query))
+    print()
 
 test()

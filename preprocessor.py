@@ -79,35 +79,19 @@ class Preprocessor:
 
         return list(words)
 
-    def get_query_type(self, query: str):
-        if 'AND' in query:
-            return 'boolean query'
-        else:
-            return 'free text query'
-
-    def parse_query(self, query_data: str) -> Sequence[str]:
+    def parse_query(self, query: str) -> Sequence[str]:
         """
         Parse a query into a list of space-separated tokens with the necessary
         modifications (case folding, stemming etc), preserving phrases in
         quotation marks.
         """
-        tokens = [token.strip("\"' ") for token in self.phrases_regex.findall(query_data)]
+        tokens = [token.strip("\"' ") for token in self.phrases_regex.findall(query)]
 
-        # return [
-        #     " ".join(self.tokenize(token))
-        #     for token in tokens
-        #     if token != BOOLEAN_AND and self.tokenize(token)
-        # ]
-
-        query = dict()
-        query_type = self.get_query_type(query_data)
-        query['type'] = query_type
-        query['data'] = [ 
-            " ".join(self.tokenize(token)) 
+        return [
+            " ".join(self.tokenize(token))
             for token in tokens
             if token != BOOLEAN_AND and self.tokenize(token)
         ]
-        return query
 
     def ConcatenateWords(self, WordsList):
         return " ".join(WordsList)
@@ -133,6 +117,30 @@ class Preprocessor:
         QueryList = [token.strip("\"' ") for token in self.phrases_regex.findall(query)]
         return [query for query in QueryList if query != BOOLEAN_AND]
         
+    def SplitTriword(self, queryDict):
+        newQueryData = list()
+        for words in queryDict['data']:
+            splitWords = words.split()
+            if len(splitWords) == 3:
+                newQueryData.append(splitWords[0] + ' ' + splitWords[1])
+                newQueryData.append(splitWords[1] + ' ' + splitWords[2])
+            else:
+                newQueryData.append(words)
+        queryDict['data'] = newQueryData
+        return queryDict
+
+    def SplitBiword(self, queryDict):
+        newQueryData = list()
+        for words in queryDict['data']:
+            splitWords = words.split()
+            if len(splitWords) > 1:
+                for splitWord in splitWords:
+                    newQueryData.append(splitWord)
+            else:
+                newQueryData.append(words)
+        queryDict['data'] = newQueryData
+        return queryDict
+
     def is_boolean_query(self, query: str) -> bool:
         """
         Check if a query is a boolean query
@@ -199,8 +207,9 @@ def test():
             corpus_tokens = preprocessor.tokenize(corpus)
 
     query = getQuery(queryFile)
-    print('query:', query)
-    print(preprocessor.parse_query(query))
+    queryDict = preprocessor.parse_query(query)
+    queryDict1 = preprocessor.SplitTriword(queryDict)
+    print(queryDict1)
     # print(preprocessor.QueryListToBooleanQuery(query))
     # print(preprocessor.QueryListToFreeText(query))
 
