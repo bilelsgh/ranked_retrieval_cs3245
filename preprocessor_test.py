@@ -2,7 +2,7 @@ import re
 import sys
 import csv
 import itertools
-import pandas as pd
+# import pandas as pd
 from datetime import datetime
 # from nltk.stem import snowball
 # from nltk.tokenize import sent_tokenize, word_tokenize
@@ -31,9 +31,9 @@ def increase_csv_field_size_limit(new_limit: int):
         except OverflowError:
             new_limit //= 10
 
-def ReadChunksOfCSV(file, chunksize=100000):
-    chunks = pd.read_csv('dataset/dataset.csv',chunksize=chunksize)
-    return pd.concat(chunks)
+# def ReadChunksOfCSV(file, chunksize=100000):
+#     chunks = pd.read_csv('dataset/dataset.csv',chunksize=chunksize)
+#     return pd.concat(chunks)
 
 class Preprocessor:
     def __init__(
@@ -133,7 +133,7 @@ class Preprocessor:
         QueryList = [token.strip("\"' ") for token in self.phrases_regex.findall(query)]
         return [query for query in QueryList if query != BOOLEAN_AND]
         
-    def SplitTriword(self, queryDict):
+    def SplitTriwordToBiword(self, queryDict):
         newQueryData = list()
         for words in queryDict['data']:
             splitWords = words.split()
@@ -145,7 +145,7 @@ class Preprocessor:
         queryDict['data'] = newQueryData
         return queryDict
 
-    def SplitBiword(self, queryDict):
+    def SplitToUniword(self, queryDict):
         newQueryData = list()
         for words in queryDict['data']:
             splitWords = words.split()
@@ -229,7 +229,7 @@ def test():
     # query = getQuery(queryFile)
     queryDict = preprocessor.parse_query(query)
     print(queryDict)
-    queryDict1 = preprocessor.SplitTriword(queryDict)
+    queryDict1 = preprocessor.SplitTriwordToBiword(queryDict)
     print(queryDict1)
     # queryDict2 = preprocessor.SplitBiword(queryDict)
     # print(queryDict2)

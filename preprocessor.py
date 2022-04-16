@@ -2,8 +2,9 @@ import re
 import sys
 import csv
 import itertools
-import pandas as pd
+# import pandas as pd
 from datetime import datetime
+import nltk
 from nltk.stem import snowball
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.corpus import stopwords, wordnet
@@ -31,9 +32,9 @@ def increase_csv_field_size_limit(new_limit: int):
         except OverflowError:
             new_limit //= 10
 
-def ReadChunksOfCSV(file, chunksize=100000):
-    chunks = pd.read_csv('dataset/dataset.csv',chunksize=chunksize)
-    return pd.concat(chunks)
+# def ReadChunksOfCSV(file, chunksize=100000):
+#     chunks = pd.read_csv('dataset/dataset.csv',chunksize=chunksize)
+#     return pd.concat(chunks)
 
 class Preprocessor:
     def __init__(
@@ -79,19 +80,35 @@ class Preprocessor:
 
         return list(words)
 
-    def parse_query(self, query: str) -> Sequence[str]:
+    def get_query_type(self, query: str):
+        if 'AND' in query:
+            return 'boolean query'
+        else:
+            return 'free text query'
+            
+    def parse_query(self, query_data: str) -> Sequence[str]:
         """
         Parse a query into a list of space-separated tokens with the necessary
         modifications (case folding, stemming etc), preserving phrases in
         quotation marks.
         """
-        tokens = [token.strip("\"' ") for token in self.phrases_regex.findall(query)]
+        tokens = [token.strip("\"' ") for token in self.phrases_regex.findall(query_data)]
 
-        return [
-            " ".join(self.tokenize(token))
+        # return [
+        #     " ".join(self.tokenize(token))
+        #     for token in tokens
+        #     if token != BOOLEAN_AND and self.tokenize(token)
+        # ]
+
+        query = dict()
+        query_type = self.get_query_type(query_data)
+        query['type'] = query_type
+        query['data'] = [ 
+            " ".join(self.tokenize(token)) 
             for token in tokens
             if token != BOOLEAN_AND and self.tokenize(token)
         ]
+        return query
 
     def ConcatenateWords(self, WordsList):
         return " ".join(WordsList)
@@ -117,7 +134,7 @@ class Preprocessor:
         QueryList = [token.strip("\"' ") for token in self.phrases_regex.findall(query)]
         return [query for query in QueryList if query != BOOLEAN_AND]
         
-    def SplitTriword(self, queryDict):
+    def SplitTriwordToBiword(self, queryDict):
         newQueryData = list()
         for words in queryDict['data']:
             splitWords = words.split()
@@ -129,7 +146,7 @@ class Preprocessor:
         queryDict['data'] = newQueryData
         return queryDict
 
-    def SplitBiword(self, queryDict):
+    def SplitToUniword(self, queryDict):
         newQueryData = list()
         for words in queryDict['data']:
             splitWords = words.split()
@@ -172,9 +189,9 @@ class Preprocessor:
             return tokens
 
 def getQuery(QueryFile):
-    infile = open(QueryFile, 'r')
-    firstLine = infile.readline()
-    return firstLine
+    # infile = open(QueryFile, 'r')
+    # firstLine = infile.readline()
+    return '"quiet phone call" AND good AND "big dog"'
 
 def test():
     increase_csv_field_size_limit(int(sys.maxsize / 1000))
@@ -192,23 +209,23 @@ def test():
 
     preprocessor = Preprocessor(CASE_FOLD, STEMMING, REMOVE_STOP_WORDS, REMOVE_PUNCTUATIONS)
 
-    with open(in_dir, mode="r", encoding="utf-8") as f:
-        reader = csv.DictReader(f, restval="")
-        i = 0
-        for doc in reader:
-            ## uncomment to generate corpora
-            ## parse_csv_to_corpora(doc)
-            if DEVELOPMENT and i == 10:
-                break
-            # inverted_index.index(doc=doc)
-            i += 1
-            print('Num docs indexing:', i)
-            corpus = ' '.join([doc.get(TITLE), doc.get(CONTENT), doc.get(COURT)])
-            corpus_tokens = preprocessor.tokenize(corpus)
+    # with open(in_dir, mode="r", encoding="utf-8") as f:
+    #     reader = csv.DictReader(f, restval="")
+    #     i = 0
+    #     for doc in reader:
+    #         ## uncomment to generate corpora
+    #         ## parse_csv_to_corpora(doc)
+    #         if DEVELOPMENT and i == 10:
+    #             break
+    #         # inverted_index.index(doc=doc)
+    #         i += 1
+    #         print('Num docs indexing:', i)
+    #         corpus = ' '.join([doc.get(TITLE), doc.get(CONTENT), doc.get(COURT)])
+    #         corpus_tokens = preprocessor.tokenize(corpus)
 
     query = getQuery(queryFile)
     queryDict = preprocessor.parse_query(query)
-    queryDict1 = preprocessor.SplitTriword(queryDict)
+    queryDict1 = preprocessor.SplitTriwordToBiword(queryDict)
     print(queryDict1)
     # print(preprocessor.QueryListToBooleanQuery(query))
     # print(preprocessor.QueryListToFreeText(query))
