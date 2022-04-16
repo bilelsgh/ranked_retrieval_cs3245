@@ -84,7 +84,7 @@ class Preprocessor:
         """
         Check and reurn the type of queries.
         """
-        if 'AND' in query:
+        if 'AND' in query or '\"' in query:
             return 'boolean query'
         else:
             return 'free text query'
