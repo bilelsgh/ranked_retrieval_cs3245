@@ -80,7 +80,10 @@ class Preprocessor:
 
         return list(words)
 
-    def get_query_type(self, query: str):
+    def get_query_type(self, query: str) -> str: 
+        """
+        Check and reurn the type of queries.
+        """
         if 'AND' in query:
             return 'boolean query'
         else:
@@ -94,12 +97,6 @@ class Preprocessor:
         """
         tokens = [token.strip("\"' ") for token in self.phrases_regex.findall(query_data)]
 
-        # return [
-        #     " ".join(self.tokenize(token))
-        #     for token in tokens
-        #     if token != BOOLEAN_AND and self.tokenize(token)
-        # ]
-
         query = dict()
         query_type = self.get_query_type(query_data)
         query['type'] = query_type
@@ -110,10 +107,16 @@ class Preprocessor:
         ]
         return query
 
-    def ConcatenateWords(self, WordsList):
+    def ConcatenateWords(self, WordsList: Sequence[str]) -> str:
+        """
+        Concatenate all the words in the list.
+        """
         return " ".join(WordsList)
 
-    def QueryListToBooleanQuery(self, query: str):
+    def QueryListToBooleanQuery(self, query: str) -> Sequence[str]:
+        """
+        Convert the list of queries to boolean queries.
+        """
         QueryList = [token.strip("\"' ") for token in self.phrases_regex.findall(query)]
         phrase_word = list()
         NewQueryList = list()
@@ -130,11 +133,17 @@ class Preprocessor:
             NewQueryList.append(phrase)
         return NewQueryList
 
-    def QueryListToFreeText(self, query: str):
+    def QueryListToFreeText(self, query: str) -> Sequence[str]:
+        """
+        Convert the list of queries to free text queries.
+        """
         QueryList = [token.strip("\"' ") for token in self.phrases_regex.findall(query)]
         return [query for query in QueryList if query != BOOLEAN_AND]
         
-    def SplitTriwordToBiword(self, queryDict):
+    def SplitTriwordToBiword(self, queryDict: Dict) -> Dict:
+        """
+        Split triwords queries to biwords queries.
+        """
         newQueryData = list()
         for words in queryDict['data']:
             splitWords = words.split()
@@ -146,7 +155,10 @@ class Preprocessor:
         queryDict['data'] = newQueryData
         return queryDict
 
-    def SplitToUniword(self, queryDict):
+    def SplitToUniword(self, queryDict: Dict) -> Dict:
+        """
+        Split the queries to uniword queries.
+        """
         newQueryData = list()
         for words in queryDict['data']:
             splitWords = words.split()
@@ -160,13 +172,13 @@ class Preprocessor:
 
     def is_boolean_query(self, query: str) -> bool:
         """
-        Check if a query is a boolean query
+        Check if a query is a boolean query.
         """
         return bool(self.and_regex.search(query))
 
     def tokenize_date_string(self, date_string: str) -> Sequence[str]:
         """
-        Extract the date tokens from a date string
+        Extract the date tokens from a date string.
         """
         try:
             date = datetime.fromisoformat(date_string)
@@ -209,6 +221,9 @@ class Query:
         self.queryDict = dict()
 
     def getQuery(self):
+        """
+        Get the queries and their relevant documents from the query file.
+        """
         with open(self.query_file) as f:
             lines = f.readlines()
             query = lines[0]
@@ -218,6 +233,9 @@ class Query:
         return query, relevant_docs
 
     def queryProcess(self):
+        """
+        Process the queries with Preprocessor.
+        """
         query, relevant_docs = self.getQuery()
         self.queryDict = self.preprocessor.parse_query(query)
         self.queryDict['relevant_docs'] = relevant_docs
@@ -227,35 +245,35 @@ class Query:
             self.queryDict = self.preprocessor.SplitToUniword(self.queryDict)
         return self.queryDict
 
-def test():
-    increase_csv_field_size_limit(int(sys.maxsize / 1000))
+# def test():
+#     increase_csv_field_size_limit(int(sys.maxsize / 1000))
 
-    in_dir = 'dataset/dataset.csv'
-    QUERYFILE = 'queries/q1.txt'
+#     in_dir = 'dataset/dataset.csv'
+#     QUERYFILE = 'queries/q1.txt'
 
-    DEVELOPMENT = True
+#     DEVELOPMENT = True
 
-    DOCUMENT_ID = "document_id"
-    TITLE = "title"
-    CONTENT = "content"
-    DATE_POSTED = "date_posted"
-    COURT = "court"
+#     DOCUMENT_ID = "document_id"
+#     TITLE = "title"
+#     CONTENT = "content"
+#     DATE_POSTED = "date_posted"
+#     COURT = "court"
 
-    # with open(in_dir, mode="r", encoding="utf-8") as f:
-    #     reader = csv.DictReader(f, restval="")
-    #     i = 0
-    #     for doc in reader:
-    #         ## uncomment to generate corpora
-    #         ## parse_csv_to_corpora(doc)
-    #         if DEVELOPMENT and i == 10:
-    #             break
-    #         # inverted_index.index(doc=doc)
-    #         i += 1
-    #         print('Num docs indexing:', i)
-    #         corpus = ' '.join([doc.get(TITLE), doc.get(CONTENT), doc.get(COURT)])
-    #         corpus_tokens = preprocessor.tokenize(corpus)
+#     # with open(in_dir, mode="r", encoding="utf-8") as f:
+#     #     reader = csv.DictReader(f, restval="")
+#     #     i = 0
+#     #     for doc in reader:
+#     #         ## uncomment to generate corpora
+#     #         ## parse_csv_to_corpora(doc)
+#     #         if DEVELOPMENT and i == 10:
+#     #             break
+#     #         # inverted_index.index(doc=doc)
+#     #         i += 1
+#     #         print('Num docs indexing:', i)
+#     #         corpus = ' '.join([doc.get(TITLE), doc.get(CONTENT), doc.get(COURT)])
+#     #         corpus_tokens = preprocessor.tokenize(corpus)
 
-    query = Query(CASE_FOLD, STEMMING, REMOVE_STOP_WORDS, REMOVE_PUNCTUATIONS, QUERYFILE)
-    print(query.queryProcess())
+#     query = Query(CASE_FOLD, STEMMING, REMOVE_STOP_WORDS, REMOVE_PUNCTUATIONS, QUERYFILE)
+#     print(query.queryProcess())
 
-test()
+# test()

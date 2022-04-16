@@ -1,12 +1,14 @@
-This is the README file for A0248444Y's and A0183158Y's submission           
+This is the README file for A0248444Y_A0183158Y_A0188693H_A0248812B's submission           
 Email(s): 
 e0926090@u.nus.edu                                                           
 e0309953@u.nus.edu
+e0324277@u.nus.edu
+e0934074@u.nus.edu
 
 == Python Version ==
-A0183158Y is using 3.8.10
 A0248444Y is using 3.9.5
-
+A0183158Y_A0188693H_A0248812B is using 3.8.10
+ 
 == General Notes about this assignment ==
 
 # index.py:
@@ -90,6 +92,7 @@ and formatted correctly.
 
 index.py             - This file builds the dictionary and postings list from the reuters dataset.
 search.py            - This file helps to evaluate queries and outputs the K most relevant docID that matches the query, in decreasing order of relevance. 
+preprocessor.py      - This file aims to preprocess the query file to queries information .
 dictionary.txt       - This file contains the sorted Terms, Document Frequency and Offset to find the corresponding posting lists of the terms. 
 postings.txt         - This file contains the list of DocID for the individual Terms that we have extracted. Additionally skip pointers are also appended to speed up the search process.
 documents_length.txt - This file contains docID and docLength to remove recomputation of docLength everytime we process another query.
@@ -98,7 +101,7 @@ documents_length.txt - This file contains docID and docLength to remove recomput
 
 Please put a "x" (without the double quotes) into the bracket of the appropriate statement.
 //////////////////////////////////////////////////////////// TO BE FILLED
-[x] We, A0248444Y and A0183158Y, certify that I/we have followed the CS 3245 Information
+[x] We, A0248444Y, A0183158Y, A0188693H, and A0248812B, certify that I/we have followed the CS 3245 Information
 Retrieval class guidelines for homework assignments.  In particular, I/we
 expressly vow that I/we have followed the Facebook rule in discussing
 with others in doing the assignment and did not take notes (digital or
