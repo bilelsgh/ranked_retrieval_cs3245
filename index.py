@@ -73,19 +73,23 @@ def writeDict(_dict,postL):
     # :return: void
     # print(_dict)
     # print(postL)
-    offset = 0
+    # offset = 0
+    offset = 1
     with open("dictionary.txt", "w", encoding="utf-8") as f:
         for key,val in _dict.items():
             sorted_docIDS = [int(elt) for elt in list(postL[str(val)].keys())]
             sorted_docIDS.sort()
+
 #            sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], (str(postL[str(val)][(elt)][1]))[:5] ) for elt in sorted_docIDS]
-            sorted_docIDS_5dig = ["{}_{}".format( ("0000"+str(elt))[:], (str(postL[str(val)][(elt)][1]))[:5] ) for elt in sorted_docIDS] # temporary
+            sorted_docIDS_5dig = ["{}_{}".format( ("0000"+str(elt)), (str(postL[str(val)][(elt)][1]))[:5] ) for elt in sorted_docIDS] # temporary
             all_docIDS = " ".join( sorted_docIDS_5dig )
 
             post_line = "{}\n".format(all_docIDS)
             new_line = "{} {} {}\n".format(key,len( postL[str(val)] ),offset) 
             f.write(new_line)
-            offset += len(post_line)+1
+
+            # offset += len(post_line)+1
+            offset += 1
 
 def writePosting(post,encoding="utf-8"):
     # Write a posting list onto harddisk during the "build index" part.
@@ -99,9 +103,8 @@ def writePosting(post,encoding="utf-8"):
             sorted_docIDS = [int(elt[0]) for elt in sorted_posting]
             #sorted_docIDS = [int(elt) for elt in list(docIDS.keys())]
 #            sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], (str(docIDS[(elt)][1]))[:5] ) for elt in sorted_docIDS] #with term weights
-            sorted_docIDS_5dig = ["{}_{}".format( ("0000"+str(elt))[:], (str(docIDS[(elt)][1]))[:5] ) for elt in sorted_docIDS] # temporary
+            sorted_docIDS_5dig = ["{}_{}".format( ("0000"+str(elt)), (str(docIDS[(elt)][1]))[:5] ) for elt in sorted_docIDS] # temporary
             all_docIDS = " ".join( sorted_docIDS_5dig )
-           
             new_line = "{}\n".format(all_docIDS)
             f.write(new_line)
             offset += len(new_line)+1
@@ -144,7 +147,7 @@ def build_index(in_dir, out_dict, out_postings,path_data):
     print('indexing...')
 
     columns_to_index = {"content"} # Columns : "document_id","title","content","date_posted","court"
-    data = pd.read_csv(path_data).head() # Get the data in a dataframe
+    data = pd.read_csv(path_data) # Get the data in a dataframe
     print("Data length : {}".format(len(data)))
 
     #Init
