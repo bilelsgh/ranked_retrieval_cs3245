@@ -111,7 +111,7 @@ def get_documents(cosscores):
 def get_doc_id_and_weight(str):
     doc, weight = str.split('_')
 
-    return int(doc) , float(weight)
+    return int(doc)  # , float(weight)
 
 def get_postings_list(token, dictionary, postings_file):
     tf, offset = dictionary.get(token, (False, False))
@@ -153,6 +153,27 @@ def search_documents(token, dictionary, postings_file):
         
     return documents
 
+def do_and(p1, p2):
+    res = []
+
+    ptr1, ptr2 = 0, 0
+
+    while ptr1 < len(p1) and ptr2 < len(p2):
+        d1, d2 = p1[ptr1], p2[ptr2]
+
+        if d1 == d2:
+            res.append(d1)
+            ptr1 += 1
+            ptr2 += 1
+
+        elif d1 < d2:
+            ptr1 += 1
+
+        else:
+            ptr2 += 1
+
+    return res
+
 def eval_AND(tokens,dictionary,posting_file):
     # Get documents that contains every token in tokens
     # :param tokens: Array of unigrams -> ["bank","of","newyork"]
@@ -160,41 +181,20 @@ def eval_AND(tokens,dictionary,posting_file):
     # :param postings_file: (str) Path of the postings
     # :return res: documents that match the AND query
 
-
     documents = [] # contains the list of documents that contains each token -> [ [(doc1 that contains tokens[0], score).. ], [(doc1 that contains tokens[1], score)..  ], ... ]
-    res = [] # documents that contain all tokens
 
     # Get the documents lists for each token
     for token in tokens :
         postings_list = get_postings_list(token=token, dictionary=dictionary, postings_file=postings_file)
         documents.append(postings_list)
 
-    if len(documents) == 1:
-        return [doc for doc, weight in documents[0]]
+    while len(documents) > 1:
+        p1 = documents.pop()
+        p2 = documents.pop()
+        new_combined_postings_list = do_and(p1=p1, p2=p2)
+        documents.append(new_combined_postings_list)
 
-    pointers = [0] * len(documents)
-
-    while [pointers[i] < len(documents[i]) for i in range(len(documents))] == [True]*len(documents):
-        # A match exists if the three terms appear in the same document
-        if len(documents) == 2 :
-            match = documents[0][pointers[0]][0] == documents[1][pointers[1]][0]
-        else:
-            match = documents[0][pointers[0]][0] == documents[1][pointers[1]][0] == documents[2][pointers[2]][0]
-
-
-        if match :
-            res.append( documents[0][pointers[0]] )
-
-        # Increment the pointer with the smallest docID
-        min_ = min( documents[0][pointers[0]][0],documents[1][pointers[1]][0] ) # The smaller current docID
-        min_ = min(min_,documents[2][pointers[2]][0]) if len(documents) == 3 else min_
-        
-        if documents[0][pointers[0]][0] == min_ :
-            pointers[0] += 1
-        elif documents[1][pointers[1]][0] == min_ :
-            pointers[1] += 1
-        else:
-            pointers[2] += 1
+    res = documents[0]
 
     return res
 
@@ -225,7 +225,7 @@ def get_centroid_vector(tokens, dictionary, relevant_docs, collection_size):
         tf = freq
 
         # get doc freq if exists, else return 0
-        df = dictionary.get(term, 0)[0]
+        df = dictionary.get(term, [0])[0]
 
         idf = get_log_weighted_term_freq(collection_size=collection_size, df=df)
 
@@ -233,7 +233,9 @@ def get_centroid_vector(tokens, dictionary, relevant_docs, collection_size):
 
         for doc in relevant_docs:
             euclidean_doc_len = get_euclidean_doc_len(doc)
-            ltc = get_log_freq_weighting_scheme(tf=dictionary[term][0])/ euclidean_doc_len
+
+            ltc = get_log_freq_weighting_scheme(tf=dictionary[term][0]) / euclidean_doc_len
+
             ln_ltc = ln*ltc
             centroid_vector[term] = centroid_vector.get(term, 0)+ln_ltc
 
@@ -246,6 +248,10 @@ def get_centroid_vector(tokens, dictionary, relevant_docs, collection_size):
 def get_cosine_scores(dictionary, docs, tokens, relevant_docs):
     """(recursively) compute cosine scores of documents"""
 
+    # edge case - if there are no documents matching the query at all
+    if not docs:
+        return
+
     collection_size = N
     scores = {}
 
@@ -257,7 +263,7 @@ def get_cosine_scores(dictionary, docs, tokens, relevant_docs):
         tf = freq
 
         # get doc freq if exists, else return 0
-        df = dictionary.get(term, 0)[0]
+        df = dictionary.get(term, [0])[0]
 
         idf = get_log_weighted_term_freq(collection_size=collection_size, df=df)
 
@@ -329,7 +335,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
     documents = eval_AND(tokens=tokens.keys(), dictionary=dictionary, posting_file=postings_file)
 
     res = get_cosine_scores(dictionary=dictionary, docs=documents, tokens=tokens, relevant_docs=relevant_docs)
-    res = list(map(str, res))
+    res = list(map(str, res)) if res else []
 
     with open(results_file, 'w') as output:
         print(' '.join(res), file=output)
