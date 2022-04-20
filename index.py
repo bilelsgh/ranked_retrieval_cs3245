@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import pandas as pd
+import csv
 import filecmp
 from pydoc import doc
 import re
@@ -144,8 +145,15 @@ def build_index(in_dir, out_dict, out_postings,path_data):
     print('indexing...')
 
     columns_to_index = {"content"} # Columns : "document_id","title","content","date_posted","court"
-    data = pd.read_csv(path_data).head() # Get the data in a dataframe
+    #data = pd.read_csv(path_data).head() # Get the data in a dataframe
     print("Data length : {}".format(len(data)))
+
+    data = []
+    with open('test.csv', newline='',encoding="utf-8") as csvfile:
+        data_raw = csv.reader(csvfile, delimiter=' ', quotechar='|')
+        for row in data_raw:
+            data.append((row[0].split(",")))
+    data = data[1:]
 
     #Init
     dictionary = {} # Format : {"token": {title : postingListID, content: postingListID} ..}
@@ -155,18 +163,18 @@ def build_index(in_dir, out_dict, out_postings,path_data):
     
     
     # We are going through all the documents
-    for _,row in data.iterrows():
-        docID = row["document_id"]
+    for _,row in data:
+        docID = row[0]
         index +=1
 
-        for col in columns_to_index :
+        for col in range(len(row)) :
             date_col = False
             line = row[col]
 
             # == PREPROCESS STUFF ==
             final_tokens = {}
             stemmed_tokens_without_punct = []
-            if col == "date_posted": # dates are not processed as the other columns
+            if col == 3 : #"date_posted": # dates are not processed as the other columns
                 date_col = True
                 yy,mm,dd = line.split()[0].split("-")
 
@@ -182,7 +190,7 @@ def build_index(in_dir, out_dict, out_postings,path_data):
                 for word in word_tokenize(line) : # "Is U.S. big?" --> ["Is", "U.S.", "big?"] 
 
                     # We only index number that are in the title
-                    if col == "title":
+                    if col == 1 : # "title":
                         #Stemm
                         stemmed_token = (STEMMER.stem(word)) # are -> be
                         
