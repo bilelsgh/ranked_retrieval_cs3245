@@ -5,16 +5,19 @@ import os
 import nltk
 import sys
 import getopt
+import math
 from math import sqrt, log, pow
 from nltk import stem
 from nltk.tokenize import word_tokenize
 from nltk.corpus import wordnet
 from string import punctuation
+from collections import Counter
+import linecache
+
 
 STEMMER = stem.PorterStemmer()
 DIGITS = 5
 N = sum(1 for line in open('documents_length.txt'))
-print("Size of the collection : {}".format(N))
 # Size of the collection
 ### return max 10 documents
 K = 10
@@ -28,15 +31,25 @@ POS_SET = {
     "R": wordnet.ADV,
     "V": wordnet.VERB,
 }
+
 # == Normalization functions ==
+
+def get_euclidean_doc_len(docID):
+    """get the euclidean doc len"""
+
+    with open("documents_length.txt","r") as f:
+        while(l:=f.readline()) : 
+            if int(l.split(" ")[0]) == docID :
+                return float(l.split(" ")[1])
+    return 0
 
 def normalize_docScore(docID, score):
     # Normalize a document's score with the document's length we compute at the indexing time
     # :param docID: (int) document ID
     # :param score: (float) current document's score
-    # :return: (float) document's normalized score, -1 if we didn't find the document length 
+    # :return: (float) document's normalized score, -1 if we didn't find the document length
     with open("documents_length.txt","r") as f:
-        while(l:=f.readline()) : 
+        while(l:=f.readline()) :
             if int(l.split(" ")[0]) == docID :
                 return score/float(l.split(" ")[1])
     return -1
@@ -68,6 +81,7 @@ def retrieve_dict(filepath):
             ### term, docFreq, Offset in postingslist
             word, freq, offset = line.split(" ")
             dictionary[word] = (int(freq), int(offset))
+
     return dictionary
 
 def update_documentvector(document_vectors, documents, token):
@@ -96,16 +110,24 @@ def get_documents(cosscores):
     # Keep the K better documents : those with the best cosscore.
     # :param cosscore: Scores for each documents, format : [(docId, cosscore), ...]
     # :return: K documents with the highest score
-    
-    cosscores.sort(key=lambda i:i[1], reverse=True) ### sort using the cosscore
 
-    ### Get only the best K number of results
-    if len(cosscores) > K:
-        cosscores = cosscores[:K]
-    print(cosscores)
+    sorted_cos_scores = sorted(cosscores.items(), key=lambda item: item[1], reverse=True)
+    # print(sorted_cos_scores)
 
-    ### return only the docId
-    return [str(docId[0]) for docId in cosscores]
+    return [doc for doc, score in sorted_cos_scores]
+
+def get_doc_id_and_weight(str):
+    doc, weight = str.split('_')
+
+    return int(doc)  # , float(weight)
+
+def get_postings_list(token, dictionary, postings_file):
+    tf, offset = dictionary.get(token, (False, False))
+
+    if not offset:
+        return []
+
+    return list(map(get_doc_id_and_weight, linecache.getline(postings_file, offset).rstrip().split()))
 
 def search_documents(token, dictionary, postings_file):
     # Get the document that contain a precise token
@@ -120,15 +142,14 @@ def search_documents(token, dictionary, postings_file):
     
     with open(postings_file, "r") as f:
         f.seek(dictionary[token][1])
-        line = f.readline()
-        line = line.strip("\n")
-        line = line.split(" ")  
+        line = f.readline().rstrip()
+        line = line.split()[1:] # todo check why the offset is wrong damn bro is damn off HAHAHA
 
         # Only consider the documents with high enough weight *Heur3*
         documents = []
         for elt in line:
             # docID_weight = ( int(elt.split("_")[0]),float(elt.split("_")[1]) ) # (docID,tf.idf)
-            docID_weight = ( int(elt[:5]),float(elt[5:]) )
+            docID_weight = get_doc_id_and_weight(elt)
             # Optimization heuristic : we only return document with a high enough weight
             if HEURISTIC3 :
                 if ( docID_weight[1] ) > WEIGHT_DOCUMENT_THRESHOLD :
@@ -140,6 +161,27 @@ def search_documents(token, dictionary, postings_file):
         
     return documents
 
+def do_and(p1, p2):
+    res = []
+
+    ptr1, ptr2 = 0, 0
+
+    while ptr1 < len(p1) and ptr2 < len(p2):
+        d1, d2 = p1[ptr1], p2[ptr2]
+
+        if d1 == d2:
+            res.append(d1)
+            ptr1 += 1
+            ptr2 += 1
+
+        elif d1 < d2:
+            ptr1 += 1
+
+        else:
+            ptr2 += 1
+
+    return res
+
 def eval_AND(tokens,dictionary,posting_file):
     # Get documents that contains every token in tokens
     # :param tokens: Array of unigrams -> ["bank","of","newyork"]
@@ -147,42 +189,120 @@ def eval_AND(tokens,dictionary,posting_file):
     # :param postings_file: (str) Path of the postings
     # :return res: documents that match the AND query
 
-
     documents = [] # contains the list of documents that contains each token -> [ [(doc1 that contains tokens[0], score).. ], [(doc1 that contains tokens[1], score)..  ], ... ]
-    res = [] # documents that contain all tokens
 
     # Get the documents lists for each token
     for token in tokens :
-        print(token)
-        documents.append( search_documents(token,dictionary,posting_file) )
+        postings_list = get_postings_list(token=token, dictionary=dictionary, postings_file=postings_file)
+        documents.append(postings_list)
 
-    print(documents)
-    pointers = [0]*len(documents)
+    while len(documents) > 1:
+        p1 = documents.pop()
+        p2 = documents.pop()
+        new_combined_postings_list = do_and(p1=p1, p2=p2)
+        documents.append(new_combined_postings_list)
 
-    while [pointers[i] < len(documents[i]) for i in range(len(documents))] == [True]*len(documents):
-        # A match exists if the three terms appear in the same document
-        if len(documents) == 2 :
-            match = documents[0][pointers[0]][0] == documents[1][pointers[1]][0]
-        else:
-            match = documents[0][pointers[0]][0] == documents[1][pointers[1]][0] == documents[2][pointers[2]][0]
-
-
-        if match :
-            res.append( documents[0][pointers[0]] )
-
-        # Increment the pointer with the smallest docID
-        min_ = min( documents[0][pointers[0]][0],documents[1][pointers[1]][0] ) # The smaller current docID
-        min_ = min(min_,documents[2][pointers[2]][0]) if len(documents) == 3 else min_
-        
-        if documents[0][pointers[0]][0] == min_ :
-            pointers[0] += 1
-        elif documents[1][pointers[1]][0] == min_ :
-            pointers[1] += 1
-        else:
-            pointers[2] += 1
+    res = documents[0]
 
     return res
-        
+
+def get_log_weighted_term_freq(collection_size, df):
+    """calculate the log weighted term frequency (in corpus)"""
+
+    return (
+        math.log10(collection_size / df)
+        if collection_size > 0 and df > 0
+        else 0
+    )
+
+def get_tf_idf_score(tf, idf):
+    """calculate tf-idf"""
+    return (1+math.log(tf, 10))*idf
+
+
+def get_log_freq_weighting_scheme(tf):
+    """calculate the log weighted term frequency"""
+    return (1+math.log10(tf)) if tf > 0 else 0
+
+
+def get_centroid_vector(tokens, dictionary, relevant_docs, collection_size):
+    centroid_vector = {}
+    doc_len = len(relevant_docs)
+
+    for term, freq in tokens.items():
+        tf = freq
+
+        # get doc freq if exists, else return 0
+        df = dictionary.get(term, [0])[0]
+
+        idf = get_log_weighted_term_freq(collection_size=collection_size, df=df)
+
+        ln = get_tf_idf_score(tf=tf, idf=idf)
+
+        for doc in relevant_docs:
+            euclidean_doc_len = get_euclidean_doc_len(doc)
+
+            ltc = get_log_freq_weighting_scheme(tf=dictionary[term][0]) / euclidean_doc_len
+
+            ln_ltc = ln*ltc
+            centroid_vector[term] = centroid_vector.get(term, 0)+ln_ltc
+
+    for term in centroid_vector:
+        centroid_vector[term]/=doc_len
+        centroid_vector[term]*=0.8
+
+    return centroid_vector
+
+def get_cosine_scores(dictionary, docs, tokens, relevant_docs):
+    """(recursively) compute cosine scores of documents"""
+
+    # edge case - if there are no documents matching the query at all
+    if not docs:
+        return
+
+    collection_size = N
+    scores = {}
+
+    centroid_vector = get_centroid_vector(
+        tokens=tokens, dictionary=dictionary, relevant_docs=relevant_docs, collection_size=collection_size
+    ) if relevant_docs else {term: 1 for term in tokens}
+
+    for term, freq in tokens.items():
+        tf = freq
+
+        # get doc freq if exists, else return 0
+        df = dictionary.get(term, [0])[0]
+
+        idf = get_log_weighted_term_freq(collection_size=collection_size, df=df)
+
+        ln = get_tf_idf_score(tf=tf, idf=idf)
+
+        for doc in docs:
+            euclidean_doc_len = get_euclidean_doc_len(doc)
+            ltc = get_log_freq_weighting_scheme(tf=dictionary[term][0])/ euclidean_doc_len
+            ln_ltc = ln*ltc
+            scores[doc] = scores.get(doc, 0)+(ln_ltc*centroid_vector[term])
+
+    # if no relevant documents were passed in, perform pseudo relevance feedback
+    if not relevant_docs:
+        pseudo_relevant_docs = get_documents(scores)[:8]
+        return get_cosine_scores(
+            dictionary=dictionary,
+            docs=docs,
+            tokens=tokens,
+            relevant_docs=pseudo_relevant_docs
+        )
+
+    return get_documents(scores)
+
+def usage():
+    print("usage: " + sys.argv[0] + " -d dictionary-file -p postings-file -q file-of-queries -o output-file-of-results")
+
+def print_dictionary(d):
+    for key in sorted(d):
+        df = d[key][0]
+        print(f'{key} {df}')
+
 def get_synonyms(query, dictionary):
     tokens = []
     for token, pos in nltk.pos_tag(query):
@@ -197,80 +317,54 @@ def get_synonyms(query, dictionary):
             
     return tokens
 
-def process_query(query, dictionary):
-    # Get the query tokens and their scores from a free text query
-    # :param query: (str) A free text query
-    # :param dictionary: Dictionary of the collection, format : {term1: (termFrequency, offset)...}
-    # :return final_query: Query terms we will considere during the search, format [queryterm1, queryterm2 ...]
-    # :return token_score: Scores of each of the query term returned
-
-    tokens = {}
-    queries = word_tokenize(query)
-    queries = [query.strip(punctuation) for query in queries]
-    queries.extend(get_synonyms(queries))
+def get_tokens(query_str, dictionary):
+    # remove " cuz we dont have biword index
+    # remove AND
+    # split by whitespace
+    # todo change if we can implement biword index
+    tokens = query_str.replace('"', '').replace('AND', '').split()
     
-    for query in queries:
-        ### pre-process tokens similar to index
-        token = (STEMMER.stem(query)) 
+    # get synonyms
+    tokens.extend(get_synonyms(tokens, dictionary))
 
-        ### maintain tf for the token
-        if token[0] in tokens:
-            tokens[token[0]] += 1
-        else:
-            tokens[token[0]] = 1
-            queries.append(token[0])  ### get all distinct tokens
+    # apply case fold
+    tokens = map(lambda word: word.casefold(), tokens)
 
-    ### compute the tf-idf
-    token_wtidf = []
-    for i in range(len(queries)):
-        token = queries[i]
+    # apply stemming
+    tokens = map(lambda word: STEMMER.stem(word), tokens)
 
-        tf_idf = (1 + log(tokens[token], 10)) * log(N/dictionary[token][0], 10) ### TODO: Check the data structure for dictionary and change accordingly -> ok with the data structure
-        token_wtidf.append(tf_idf)
-    
-    
-    ### get only the important terms of the query and get rid of those which don't give much information (1)
-    queries_and_score = [(queries[i],tf) for i,tf in enumerate(token_wtidf) if tf > WEIGHT_QUERY_THRESHOLD]
-    
-    ### Optimization heuristic : the query terms are sorted by weights
-    if HEURISTIC3:
-        queries_and_score.sort(key=lambda i:i[1], reverse=True) 
+    # remove dispensable punctuation
+    punctuations = set(punctuation) - set("$@%")
+    tokens = filter(lambda word: word not in punctuations, tokens)
 
-    return dict(queries_and_score)  
+    return Counter(tokens)
 
-def usage():
-    print("usage: " + sys.argv[0] + " -d dictionary-file -p postings-file -q file-of-queries -o output-file-of-results")
+
+def get_query_and_relevant_docs(src):
+    with open(src, 'r') as f:
+        data = [line.rstrip() for line in f.readlines()]
+
+    if len(data) == 1:
+        return data[0], None
+    else:
+        # there are relevant documents provided
+        return data[0], list(map(int, data[1:]))
 
 def run_search(dict_file, postings_file, queries_file, results_file):
     dictionary = retrieve_dict(dict_file) # Get the dictionary
 
-    # Get the query 
-    with open(queries_file, "r") as file, open(results_file, "w") as output_file:              
-        while query := file.readline():
-            documents_vects = {} # { docID: document_vector ..}
-            
-            ### compute scores for the query and keep track of the ordering for the queries         
-            print("Query : '{}'".format(query)) 
-            query_dict = process_query(query, dictionary)
+    query_str, relevant_docs = get_query_and_relevant_docs(queries_file)
 
-            for token in query_dict.keys():
-                print("..search documents")
-                documents = search_documents(token,dictionary,postings_file)
+    tokens = get_tokens(query_str, dictionary)
 
-                # Create a vector for the documents if they don't already exist
-                for elt in documents:
-                    if int(elt[0]) not in query_dict:
-                        documents_vects[int(elt[0])] = query_dict.fromkeys(query_dict, 0)
-                
-                update_documentvector(documents_vects, documents, token) # we got new document(s) for a token, we need to update the vector value
+    documents = eval_AND(tokens=tokens.keys(), dictionary=dictionary, posting_file=postings_file)
 
-            print("..compute cosscore")
-            cosscores = compute_cosscore(documents_vects, query_dict)
-            result = get_documents(cosscores)
+    res = get_cosine_scores(dictionary=dictionary, docs=documents, tokens=tokens, relevant_docs=relevant_docs)
+    res = list(map(str, res)) if res else []
 
-            # Write the result of the query 
-            output_file.write(' '.join(result))
-            output_file.write("\n")
+    with open(results_file, 'w') as output:
+        print(' '.join(res), file=output)
+
 
 dictionary_file = postings_file = file_of_queries = output_file_of_results = None
 
