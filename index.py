@@ -144,16 +144,16 @@ def build_index(in_dir, out_dict, out_postings,path_data):
     
     print('indexing...')
 
-    columns_to_index = {"content"} # Columns : "document_id","title","content","date_posted","court"
+    columns_to_index = {1,2,3} # Columns : "document_id","title","content","date_posted","court"
     #data = pd.read_csv(path_data).head() # Get the data in a dataframe
     print("Data length : {}".format(len(data)))
 
     data = []
-    with open('test.csv', newline='',encoding="utf-8") as csvfile:
-        data_raw = csv.reader(csvfile, delimiter=' ', quotechar='|')
+    with open(in_dir) as csvfile:
+        data_raw = csv.reader(csvfile)
+        data = data[1:]
         for row in data_raw:
             data.append((row[0].split(",")))
-    data = data[1:]
 
     #Init
     dictionary = {} # Format : {"token": {title : postingListID, content: postingListID} ..}
@@ -167,7 +167,7 @@ def build_index(in_dir, out_dict, out_postings,path_data):
         docID = row[0]
         index +=1
 
-        for col in range(len(row)) :
+        for col in columns_to_index :
             date_col = False
             line = row[col]
 
