@@ -23,6 +23,7 @@ Index without number ?
 special character error : UnicodeEncodeError: 'charmap' codec can't encode character '\u2033' in position 6: character maps to <undefined>
 """
 
+csv.field_size_limit(sys.maxsize)
 
 STEMMER = stem.PorterStemmer()
 BIGRAMS = False
@@ -74,19 +75,23 @@ def writeDict(_dict,postL):
     # :return: void
     # print(_dict)
     # print(postL)
-    offset = 0
+    # offset = 0
+    offset = 1
     with open("dictionary.txt", "w", encoding="utf-8") as f:
         for key,val in _dict.items():
             sorted_docIDS = [int(elt) for elt in list(postL[str(val)].keys())]
             sorted_docIDS.sort()
+
 #            sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], (str(postL[str(val)][(elt)][1]))[:5] ) for elt in sorted_docIDS]
-            sorted_docIDS_5dig = ["{}_{}".format( ("0000"+str(elt))[:], (str(postL[str(val)][(elt)][1]))[:5] ) for elt in sorted_docIDS] # temporary
+            sorted_docIDS_5dig = ["{}_{}".format( ("0000"+str(elt)), str(postL[str(val)][str(elt)][1])[:5] ) for elt in sorted_docIDS] # temporary
             all_docIDS = " ".join( sorted_docIDS_5dig )
 
             post_line = "{}\n".format(all_docIDS)
-            new_line = "{} {} {}\n".format(key,len( postL[str(val)] ),offset) 
+            new_line = "{} {} {}\n".format(key,len( postL[str(val)] ),offset)
             f.write(new_line)
-            offset += len(post_line)+1
+
+            # offset += len(post_line)+1
+            offset += 1
 
 def writePosting(post,encoding="utf-8"):
     # Write a posting list onto harddisk during the "build index" part.
@@ -96,11 +101,14 @@ def writePosting(post,encoding="utf-8"):
     offset = 0
     with open("postings.txt", "w") as f:
         for postID,docIDS in post.items():
-            sorted_posting = sorted(docIDS.items(), key=lambda x: x[1][1], reverse=True) # sort according to weights *Heur3*
-            sorted_docIDS = [int(elt[0]) for elt in sorted_posting]
+            sorted_postings_list = sorted(docIDS.keys())
+            sorted_docIDS_5dig = ["{}_{}".format(("0000" + str(elt)), (str(docIDS[(elt)][1]))[:5]) for elt in
+                                  sorted_postings_list]
+            # sorted_posting = sorted(docIDS.items(), key=lambda x: x[1][1], reverse=True) # sort according to weights *Heur3*
+            # sorted_docIDS = [int(elt[0]) for elt in sorted_posting]
             #sorted_docIDS = [int(elt) for elt in list(docIDS.keys())]
 #            sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], (str(docIDS[(elt)][1]))[:5] ) for elt in sorted_docIDS] #with term weights
-            sorted_docIDS_5dig = ["{}_{}".format( ("0000"+str(elt))[:], (str(docIDS[(elt)][1]))[:5] ) for elt in sorted_docIDS] # temporary
+#             sorted_docIDS_5dig = ["{}_{}".format( ("0000"+str(elt))[:], (str(docIDS[(elt)][1]))[:5] ) for elt in sorted_docIDS] # temporary
             all_docIDS = " ".join( sorted_docIDS_5dig )
            
             new_line = "{}\n".format(all_docIDS)
@@ -146,31 +154,35 @@ def build_index(in_dir, out_dict, out_postings,path_data):
 
     columns_to_index = {1,2,3} # Columns : "document_id","title","content","date_posted","court"
     #data = pd.read_csv(path_data).head() # Get the data in a dataframe
-    print("Data length : {}".format(len(data)))
+    # print("Data length : {}".format(len(data)))
 
     data = []
     with open(in_dir) as csvfile:
         data_raw = csv.reader(csvfile)
-        data = data[1:]
-        for row in data_raw:
-            data.append((row[0].split(",")))
+        for idx, row in enumerate(data_raw):
+            if idx == 0:
+                continue
+            print(idx, type(row), len(row))
+            data.append(row)
+
+            if idx == 5:
+                break
 
     #Init
     dictionary = {} # Format : {"token": {title : postingListID, content: postingListID} ..}
     postingList = {} # Format : {postingListID1: { docID1: termFrequency,  docID2: termFrequency }, postingListID2: ... } 
     index = -1
     months_correspondence = {"01":"Jan", "02":"Feb", "03":"Mar", "04":"Apr", "05":"May", "06":"Jun", "07":"Jul", "08":"Aug", "09":"Sep", "10":"Oct", "11":"Nov", "12":"Dec"}
-    
-    
+
     # We are going through all the documents
-    for _,row in data:
+    for row in data:
         docID = row[0]
+        print(docID)
         index +=1
 
         for col in columns_to_index :
             date_col = False
             line = row[col]
-
             # == PREPROCESS STUFF ==
             final_tokens = {}
             stemmed_tokens_without_punct = []
