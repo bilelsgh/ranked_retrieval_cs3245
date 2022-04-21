@@ -9,6 +9,7 @@ import math
 from math import sqrt, log, pow
 from nltk import stem
 from nltk.tokenize import word_tokenize
+from nltk.corpus import wordnet
 from string import punctuation
 from collections import Counter
 import linecache
@@ -23,6 +24,13 @@ K = 10
 WEIGHT_QUERY_THRESHOLD = 0.35 # Used to select the most important query terms
 WEIGHT_DOCUMENT_THRESHOLD = 1 # Used in optimization heuristic 3
 HEURISTIC3 = False # By default, we don't use optimization heuristic (cf. README)
+
+POS_SET = {
+    "J": wordnet.ADJ,
+    "N": wordnet.NOUN,
+    "R": wordnet.ADV,
+    "V": wordnet.VERB,
+}
 
 # == Normalization functions ==
 
@@ -247,7 +255,6 @@ def get_centroid_vector(tokens, dictionary, relevant_docs, collection_size):
 
 def get_cosine_scores(dictionary, docs, tokens, relevant_docs):
     """(recursively) compute cosine scores of documents"""
-
     # edge case - if there are no documents matching the query at all
     if not docs:
         return
@@ -269,7 +276,7 @@ def get_cosine_scores(dictionary, docs, tokens, relevant_docs):
 
         ln = get_tf_idf_score(tf=tf, idf=idf)
 
-        for doc in docs:
+        for doc in set(docs):
             euclidean_doc_len = get_euclidean_doc_len(doc)
             ltc = get_log_freq_weighting_scheme(tf=dictionary[term][0])/ euclidean_doc_len
             ln_ltc = ln*ltc
@@ -295,12 +302,31 @@ def print_dictionary(d):
         df = d[key][0]
         print(f'{key} {df}')
 
-def get_tokens(query_str):
-    # remove " cuz we dont have biword index
-    # remove AND
+def get_synonyms(query, dictionary):
+    tokens = []
+    for token, pos in nltk.pos_tag(query):
+        if token.isnumeric():
+            continue
+
+        synset = wordnet.synsets(token, pos=POS_SET.get(pos[0] if pos else None))
+        
+        results = [el.name().split(".")[0] for el in synset]
+        results = set(results)
+
+        for el in results:
+            if el in dictionary and el != token:
+                tokens.append(el)
+                break
+            
+    return set(tokens)
+
+def get_tokens(query_str, dictionary):
+    # remove AND and "
     # split by whitespace
-    # todo change if we can implement biword index
     tokens = query_str.replace('"', '').replace('AND', '').split()
+
+    # get synonyms
+    # tokens.extend(get_synonyms(tokens, dictionary))
 
     # apply case fold
     tokens = map(lambda word: word.casefold(), tokens)
@@ -313,7 +339,6 @@ def get_tokens(query_str):
     tokens = filter(lambda word: word not in punctuations, tokens)
 
     return Counter(tokens)
-
 
 def get_query_and_relevant_docs(src):
     with open(src, 'r') as f:
@@ -330,9 +355,14 @@ def run_search(dict_file, postings_file, queries_file, results_file):
 
     query_str, relevant_docs = get_query_and_relevant_docs(queries_file)
 
-    tokens = get_tokens(query_str)
+    tokens = get_tokens(query_str, dictionary)
 
     documents = eval_AND(tokens=tokens.keys(), dictionary=dictionary, posting_file=postings_file)
+
+    synonyms = get_synonyms(tokens.keys(), dictionary)
+    for synonym in synonyms:
+        documents.extend(get_postings_list(token=synonym, dictionary=dictionary, postings_file=postings_file))
+        tokens[synonym] = tokens.get(synonym, 0)+1
 
     res = get_cosine_scores(dictionary=dictionary, docs=documents, tokens=tokens, relevant_docs=relevant_docs)
     res = list(map(str, res)) if res else []
