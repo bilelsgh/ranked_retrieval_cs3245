@@ -27,6 +27,8 @@ A0183158Y_A0188693H_A0248812B is using 3.8.10
 All the docIDs are sorted according to their weights, that is needed if we want to use optimization heuristic ( we chose the number 3 ) in the searching part.
 Finally, we write all the documents’ length in a separate file (document_lengths.txt). These values will be used at the query time for normalization purposes.
 
+For the purpose of this homework 4, we create a unigram index to facilitate free text and boolean queries.
+
 ## FORMAT
     In this program we use these formats :
         
@@ -74,15 +76,13 @@ To run the search.py, user is required to give 4 inputs.
 
 The program reads queries from the query file and find the K most relevant documentIDs that satisfy the query to be output to the result/output file. 
 
-Since we are assuming that dictionary is compact and sufficiently small to be stored in memory, we first retrieve the dictionary(retrieve_dict) from dictionary.txt and store the information in memory. Since dictionary.txt has the information of the offset to the term's postings list, this will allow us to locate the posting list easily instead of scanning through the file to find the corresponding term's posting list in the postings.txt thus speeding up the retrieval of the documentIDs.
-
-For every line of query, we will first preprocess the query terms(process_query) in the same way we generate the tokens for our dictionary. After we retrieve the tokens we will then process the wt.idf weights of the query and remove query terms with low wt.idf score(under a certain threshold). Finally we return 2 arrays, the first array contains the query term order and the second array consists of the score for the corresponding query term.
-
-For each term in the queries array, we will use the token and search for documents that consists the document and get their corresponding docID and wt that has been precalculated in the indexing phase. The weight will then be added into the dictionary that maintains the vector score for the different docIDs. Once all the terms have been processed and converted a vector. We then call compute_cosscore to get the dot product between the query score and the doc score before normalizing all the score with their corresponding document length.
-
+Since we are assuming that dictionary is compact and sufficiently small to be stored in memory, we first retrieve the dictionary(retrieve_dict) from dictionary.txt and store the information in memory.
+Since dictionary.txt has the information of the offset to the term's postings list, this will allow us to locate the posting list easily instead of scanning through the file to find the corresponding term's posting list in the postings.txt thus speeding up the retrieval of the documentIDs.
+For every line of query, we will first preprocess the query terms(process_query) in the same way we generate the tokens for our dictionary.
+After we retrieve the tokens we will find one extra synonym per token to expand the search space while taking into consideration the total time taken for the search to execute in full.
+For each term in the queries array, we will use the token and search for documents that consists the document and get their corresponding docID and wt that has been precalculated in the indexing phase.
+The weight will then be added into the dictionary that maintains the vector score for the different docIDs. If there are no relevant documents in the query, we will perform pseudo relevance feedback by assuming the top 8 documents to be relevant.
 Lastly, we call get_documents to sort the documents in decreasing order of relevance before choosing the K most relevant documents that should be output into the output file.
-
-We’ve also implemented the optimization heuristic 3 (seen in lecture) to improve the document searching and the query processing, to use it you just have to set the Boolean HEURISTIC3 to True (at the top of search.py). However, our tests showed that it leads to worse results, and so we don’t use it (HEURISTIC3=False by default).
 
 == Files included with this submission ==
 
@@ -114,7 +114,8 @@ assignment, because of the following reason:
 
 We suggest that we should be graded as follows:
 
-<Please fill in>
+index -
+search - A0188693H,
 
 == References ==
 
