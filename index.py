@@ -99,11 +99,13 @@ def writePosting(post,encoding="utf-8"):
     offset = 0
     with open("postings.txt", "w") as f:
         for postID,docIDS in post.items():
-            sorted_posting = sorted(docIDS.items(), key=lambda x: x[1][1], reverse=True) # sort according to weights *Heur3*
-            sorted_docIDS = [int(elt[0]) for elt in sorted_posting]
+            sorted_postings_list = sorted(docIDS.keys())
+            # sorted_posting = sorted(docIDS.items(), key=lambda x: x[1][1], reverse=True) # sort according to weights *Heur3*
+            # sorted_docIDS = [int(elt[0]) for elt in sorted_posting]
             #sorted_docIDS = [int(elt) for elt in list(docIDS.keys())]
 #            sorted_docIDS_5dig = ["{}{}".format( ("0000"+str(elt))[-5:], (str(docIDS[(elt)][1]))[:5] ) for elt in sorted_docIDS] #with term weights
-            sorted_docIDS_5dig = ["{}_{}".format( ("0000"+str(elt)), (str(docIDS[(elt)][1]))[:5] ) for elt in sorted_docIDS] # temporary
+#             sorted_docIDS_5dig = ["{}_{}".format( ("0000"+str(elt)), (str(docIDS[(elt)][1]))[:5] ) for elt in sorted_docIDS] # temporary
+            sorted_docIDS_5dig = ["{}_{}".format( ("0000"+str(elt)), (str(docIDS[(elt)][1]))[:5] ) for elt in sorted_postings_list] # temporary
             all_docIDS = " ".join( sorted_docIDS_5dig )
             new_line = "{}\n".format(all_docIDS)
             f.write(new_line)
