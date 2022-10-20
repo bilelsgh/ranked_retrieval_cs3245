@@ -1,4 +1,5 @@
-
+Ranked retrieval:
+We built a language model and a dictionary allowing to perform time and memory efficient queries using TF-IDF method
 
 # index.py
 
@@ -25,27 +26,22 @@ In this program we use these formats :
 For the posting list, the value are dict data structure as it will be faster to know if a docID is in a posting list (instead of using list data structure and the "x in postingList" method that's longer)
 
     
-    The output format for a dictionary is :
+The output format for a dictionary is :
         
-        term1 doc_frequency posting_list_ID1
-        
-        term2 doc_frequency posting_list_ID2
-        
-        ...
+term1 doc_frequency posting_list_ID1        
+term2 doc_frequency posting_list_ID2
+...
 
         
-        The posting list IDs are nothing more than the offset (position of the read/write pointer within the file) for this line. Then, it will be possible to get the docIDS of a posting list without reading the entire posting list by using the seek() function.
+The posting list IDs are nothing more than the offset (position of the read/write pointer within the file) for this line. Then, it will be possible to get the docIDS of a posting list without reading the entire posting list by using the seek() function.
 
+The output format for a posting list is :
+        
+doc_IDS1 skip_pointers1   
+doc_IDS2 skip_pointers2        
+...
 
-    The output format for a posting list is :
-        
-        doc_IDS1 skip_pointers1
-        
-        doc_IDS2 skip_pointers2
-        
-        ...
-
-    As we use offset as posting list ID, we don't need to write it in the posting list.
+As we use offset as posting list ID, we don't need to write it in the posting list.
 
 
 # search.py:
