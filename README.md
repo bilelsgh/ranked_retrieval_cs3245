@@ -1,21 +1,6 @@
-This is the README file for A0248444Y's and A0183158Y's submission           
-Email(s): 
-e0926090@u.nus.edu                                                           
-e0309953@u.nus.edu
-== Python Version ==
 
-Brian is using 3.8.10
 
-I'm (We're) using Python Version <3.7.6 or replace version number> for
-this assignment.
-
-== General Notes about this assignment ==
-
-Give an overview of your program, describe the important algorithms/steps 
-in your program, and discuss your experiments in general.  A few paragraphs 
-are usually sufficient.
-
-# index.py:
+# index.py
 
 ## RUN
     To run the index.py user is required to give 3 inputs : 
@@ -24,23 +9,20 @@ are usually sufficient.
     2) The output posting list file using the -p option
 
 ## OVERVIEW
-    The program create a dictionary and a set of posting lists using the SPIMI Invert algorithm. We create a dummy memory (variable MEMORY at the beginning of the program) to make the use of such an algorithm useful. 
+The program create a dictionary and a set of posting lists using the SPIMI Invert algorithm. We create a dummy memory (variable MEMORY at the beginning of the program) to make the use of such an algorithm useful. 
     
-    Thus, after the creation of our index, we obtain two dictionaries and two sets of posting lists that we have to merge. To do this, we will linearly scan the two dictionaries and the two set of posting lists line by line and create a new dictionary and a new posting list in memory. 
+Thus, after the creation of our index, we obtain two dictionaries and two sets of posting lists that we have to merge. To do this, we will linearly scan the two dictionaries and the two set of posting lists line by line and create a new dictionary and a new posting list in memory. 
    
-    When these exceeds MEMORY, we write them to the hard disk and start again with a new dictionary and a new set of posting lists. Such a merge is possible because the dictionaries and the posting lists are sorted in the alphabetical order.
+When these exceeds MEMORY, we write them to the hard disk and start again with a new dictionary and a new set of posting lists. Such a merge is possible because the dictionaries and the posting lists are sorted in the alphabetical order.
 
-    For each posting list, we use skip pointers that are sqrt(L) spaced (L = length of the posting list).
+For each posting list, we use skip pointers that are sqrt(L) spaced (L = length of the posting list).
 
 ## FORMAT
-    In this program we use these formats :
-        
-        - dictionary : {"token": postingListID, ..}
-        
-        - posting list : {postingListID1: { docID1: -1,  docID2: -1 }, postingListID2: ... }
+In this program we use these formats :        
+ - dictionary : {"token": postingListID, ..}  
+ - posting list : {postingListID1: { docID1: -1,  docID2: -1 }, postingListID2: ... }
 
-
-        For the posting list, the value are dict data structure as it will be faster to know if a docID is in a posting list (instead of using list data structure and the "x in postingList" method that's longer)
+For the posting list, the value are dict data structure as it will be faster to know if a docID is in a posting list (instead of using list data structure and the "x in postingList" method that's longer)
 
     
     The output format for a dictionary is :
@@ -100,11 +82,7 @@ case 3 if NOT exist                 - run double loops with the inner list being
 
 Once the evaluation has been completed it will then be written to the output file.
 
-== Files included with this submission ==
-
-List the files in your submission here and provide a short 1 line
-description of each file.  Make sure your submission's files are named
-and formatted correctly.
+## Architecure
 
 index.py        - This file builds the dictionary and postings list from the reuters dataset.
 search.py       - This file helps to evaluate single term queries and outputs the docID that matches the query. (example: a AND b OR c, but not ab AND bc OR cd)
@@ -113,26 +91,6 @@ postings.txt    - This file contains the list of DocID for the individual Terms 
 all_docid.txt   - The docID universe so that we are able to evaluate NOT a query
 
 
-== Statement of individual work ==
-
-Please put a "x" (without the double quotes) into the bracket of the appropriate statement.
-//////////////////////////////////////////////////////////// TO BE FILLED
-[x] We, A0248444Y and A0183158Y, certify that I/we have followed the CS 3245 Information
-Retrieval class guidelines for homework assignments.  In particular, I/we
-expressly vow that I/we have followed the Facebook rule in discussing
-with others in doing the assignment and did not take notes (digital or
-printed) from the discussions.  
-
-[ ] I/We, A0000000X, did not follow the class rules regarding homework
-assignment, because of the following reason:
-
-<Please fill in>
-
-We suggest that we should be graded as follows:
-
-<Please fill in>
-
-== References ==
 
 - Link was used to understand, design and subsequently evaluate the postfix notation.
 https://isaaccomputerscience.org/concepts/dsa_toc_rpn?examBoard=all&stage=all 
